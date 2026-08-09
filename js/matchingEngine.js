@@ -44,15 +44,7 @@ export function findOptimalTeam(candidates, projectGoal) {
 
   // Step 2: Pruning by Hard Constraints (Experience, Availability, Custom Constraints)
   const prunedPool = uniqueCandidates.filter(candidate => {
-    if (candidate.experience_years < minExperience) {
-      return false;
-    }
-    for (const constraint of additionalConstraints) {
-      if (!satisfiesConstraint(candidate, constraint)) {
-        return false;
-      }
-    }
-    return true;
+    return isCandidateEligible(candidate, minExperience, additionalConstraints);
   });
 
   // Step 3: Fast-Fail Preprocessing Check - Global Skill Coverage (O(N))
@@ -342,9 +334,22 @@ function FULL_MASK_MINUS(totalSkillsCount, remainingSkillsMask) {
 }
 
 /**
+ * Checks if a candidate satisfies all hard constraints.
+ */
+export function isCandidateEligible(candidate, minExperience, additionalConstraints) {
+  if ((candidate.experience_years || 0) < minExperience) return false;
+  for (const constraint of additionalConstraints) {
+    if (!satisfiesConstraint(candidate, constraint)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
  * Checks if a candidate satisfies a specific constraint definition.
  */
-function satisfiesConstraint(candidate, constraint) {
+export function satisfiesConstraint(candidate, constraint) {
   if (!constraint || !constraint.type) return true;
 
   const { type, value, operator, skill, level } = constraint;

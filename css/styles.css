@@ -423,22 +423,26 @@ input[type=range]::-webkit-slider-thumb {
 
 .error-drawer {
   position: fixed;
-  bottom: -350px;
+  bottom: -500px;
   left: 50%;
   transform: translateX(-50%);
-  width: 600px;
+  width: 650px;
   z-index: 100;
-  padding: 1.5rem;
+  padding: 1.5rem 2rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.25rem;
   transition: bottom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border-radius: 16px 16px 0 0;
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
 }
 .error-drawer.open {
-  bottom: 1rem;
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(10,10,26,0.95));
-  border: 1px solid rgba(239, 68, 68, 0.6);
-  box-shadow: 0 0 50px rgba(239, 68, 68, 0.25);
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(10,10,26,0.95) 100%);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  border-bottom: none;
+  box-shadow: 0 -10px 50px rgba(239, 68, 68, 0.3), inset 0 1px 1px rgba(255,255,255,0.1);
 }
 
 .close-btn {
@@ -557,6 +561,7 @@ input[type=range]::-webkit-slider-thumb {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  text-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
 }
 
 .error-actions {
@@ -567,7 +572,96 @@ input[type=range]::-webkit-slider-thumb {
 .error-actions .btn-primary {
   background: var(--danger);
   box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+  animation: pulse-danger 2s infinite;
+}
+@keyframes pulse-danger {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
 .error-actions .btn-primary:hover {
   background: #dc2626;
+  animation: none;
+}
+
+/* Error Drawer Inner Gamification */
+.error-reason-box {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  padding: 1rem;
+  border-radius: 12px;
+  animation: shakeError 0.5s ease-in-out;
+}
+@keyframes shakeError {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-5px); }
+  40%, 80% { transform: translateX(5px); }
+}
+
+.error-icon {
+  font-size: 2rem;
+  filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.8));
+}
+
+.error-section h4 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #fca5a5;
+  margin-bottom: 0.5rem;
+}
+
+.error-skills-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.error-skill-pill {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.15);
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  opacity: 0;
+  transform: scale(0.8);
+}
+.error-skill-pill.success {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.4);
+}
+@keyframes popIn {
+  to { opacity: 1; transform: scale(1); }
+}
+
+.error-diagnostics-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.error-diagnostics-list li {
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 3px solid #ef4444;
+  padding: 0.75rem 1rem;
+  border-radius: 4px 8px 8px 4px;
+  font-size: 0.85rem;
+  color: #e2e8f0;
+  animation: slideRight 0.4s ease forwards;
+  opacity: 0;
+  transform: translateX(-15px);
+}
+@keyframes slideRight {
+  to { opacity: 1; transform: translateX(0); }
 }

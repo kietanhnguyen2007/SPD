@@ -1,4 +1,4 @@
-import { findOptimalTeam } from './matchingEngine.js';
+import { findOptimalTeam, isCandidateEligible } from './matchingEngine.js';
 import {
   bootstrap,
   getCandidates,
@@ -118,7 +118,9 @@ function setupEventListeners() {
   elSizeMin.addEventListener('input', updateSize);
   elSizeMax.addEventListener('input', updateSize);
   elMinExp.addEventListener('input', (e) => {
-    setMinExperience(parseInt(e.target.value));  // DataStore CRUD
+    const val = parseInt(e.target.value);
+    elExpVal.textContent = `${val}yr`;
+    setMinExperience(val);  // DataStore CRUD -> _onDataStoreChanged -> triggerCanvasReact() (real-time visual filter)
   });
 
   elRequireAvailable.addEventListener('change', (e) => {
@@ -290,8 +292,17 @@ function triggerCanvasReact() {
       radius: 40
     };
     canvasData.atoms.forEach(a => {
-      a.state = 'free';
-      a.orbitTarget = a.skills.some(s => goal.required_skills.includes(s));
+      // FIX LỖI: Visual & Filtering Leak
+      // Sử dụng isCandidateEligible để cắt tỉa (prune) các ứng viên không đạt constraint cứng
+      const eligible = isCandidateEligible(a, goal.min_experience_years, goal.additional_constraints);
+      
+      if (!eligible) {
+        a.state = 'rejected'; // Đẩy bay ra ngoài biên, không cho vào center
+        a.orbitTarget = false;
+      } else {
+        a.state = 'free';
+        a.orbitTarget = a.skills.some(s => goal.required_skills.includes(s));
+      }
     });
     elStatusText.textContent = 'Goal updated — Nucleus active';
     elBtnCrystallize.textContent = '🔮 Crystallize My Team';
@@ -415,13 +426,28 @@ function runMatching() {
       elStatusText.textContent = "🧪 the chemistry isn't there... yet";
       canvasData.atoms.forEach(a => { a.state = 'rejected'; });
 
+      const missingSkillsHtml = result.failureReport.missingSkills.length > 0 
+        ? result.failureReport.missingSkills.map((s, i) => `<span class="error-skill-pill" style="animation-delay: ${i*0.1}s">⚠️ ${s}</span>`).join('') 
+        : '<span class="error-skill-pill success">✓ All skills met</span>';
+
       elErrorContent.innerHTML = `
-        <p><strong>Reason:</strong> ${result.failureReport.reason}</p>
-        <p><strong>Missing Skills:</strong> ${result.failureReport.missingSkills.join(', ') || 'None'}</p>
-        <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0.5rem">
-          <strong>Diagnostics:</strong><br>
-          ${result.failureReport.failingConstraints.join('<br>')}
-        </p>
+        <div class="error-reason-box">
+          <div class="error-icon">❌</div>
+          <div>
+            <h3 style="margin-bottom: 0.25rem; font-size: 1.05rem;">Match Failed</h3>
+            <p style="font-size: 0.9rem; color: #fca5a5;">${result.failureReport.reason}</p>
+          </div>
+        </div>
+        <div class="error-section">
+          <h4>Missing Core Skills</h4>
+          <div class="error-skills-container">${missingSkillsHtml}</div>
+        </div>
+        <div class="error-section">
+          <h4>Diagnostics & Blockers</h4>
+          <ul class="error-diagnostics-list">
+            ${result.failureReport.failingConstraints.map((c, i) => `<li style="animation-delay: ${i*0.15}s">${c}</li>`).join('')}
+          </ul>
+        </div>
       `;
       setTimeout(() => {
         elErrorDrawer.classList.add('open');
