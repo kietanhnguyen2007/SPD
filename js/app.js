@@ -1,4 +1,5 @@
 import { findOptimalTeam, isCandidateEligible, calculateMinimalLoosen } from './matchingEngine.js';
+import { generateReport } from './reportGenerator.js';
 import {
   bootstrap,
   getCandidates,
@@ -434,47 +435,13 @@ function runMatching() {
           a.targetY = canvasData.nucleus.y + Math.sin(angle) * 120;
           angle += angleStep;
           setTimeout(() => fireConfetti(a), 400);
-        } else {
-          a.state = 'rejected';
         }
       });
 
-      // Populate Report
+      // Generate & render report via Module 3
       setTimeout(() => {
-        const currentGoal = getActiveGoal();
-        elReportContent.innerHTML = `
-          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-            <div class="status-chip">⚡ 100% Skill Coverage</div>
-            <div class="status-chip">👥 Optimal Team Size</div>
-          </div>
-        `;
-        
-        result.team.forEach((member, idx) => {
-          // Highlight skills that matched the requirement
-          const providedSkills = member.skills.filter(s => currentGoal.required_skills.includes(s));
-          const otherSkills = member.skills.filter(s => !currentGoal.required_skills.includes(s));
-          
-          let skillsHTML = providedSkills.map(s => 
-            `<span class="skill-pill" style="background:${skillColors[s]||'#555'};color:#fff; box-shadow: 0 0 5px ${skillColors[s]};">${s} ✓</span>`
-          ).join('');
-          
-          skillsHTML += otherSkills.map(s => 
-            `<span class="skill-pill" style="background:rgba(255,255,255,0.05);color:var(--text-muted); border: 1px solid var(--glass-border);">${s}</span>`
-          ).join('');
-
-          elReportContent.innerHTML += `
-            <div class="roster-card" style="animation-delay: ${idx * 0.15}s">
-              <div class="roster-avatar" style="background:${getCandidateColor(member.id)}">${getInitials(member.name)}</div>
-              <div class="roster-info">
-                <h3>${member.name}</h3>
-                <p style="font-size:0.75rem; color:var(--text-muted)">⭐ ${member.experience_years}yr Exp | 📁 ${member.past_projects_count || 0} Projects</p>
-                <div class="roster-skills">
-                  ${skillsHTML}
-                </div>
-              </div>
-            </div>
-          `;
-        });
+        const report = generateReport(result, getActiveGoal(), candidates);
+        renderSuccessReport(report);
         elReportDrawer.classList.add('open');
       }, 600);
 
@@ -483,29 +450,8 @@ function runMatching() {
       elStatusText.textContent = "🧪 the chemistry isn't there... yet";
       canvasData.atoms.forEach(a => { a.state = 'rejected'; });
 
-      const missingSkillsHtml = result.failureReport.missingSkills.length > 0 
-        ? result.failureReport.missingSkills.map((s, i) => `<span class="error-skill-pill" style="animation-delay: ${i*0.1}s">⚠️ ${s}</span>`).join('') 
-        : '<span class="error-skill-pill success">✓ All skills met</span>';
-
-      elErrorContent.innerHTML = `
-        <div class="error-reason-box">
-          <div class="error-icon">❌</div>
-          <div>
-            <h3 style="margin-bottom: 0.25rem; font-size: 1.05rem;">Match Failed</h3>
-            <p style="font-size: 0.9rem; color: #fca5a5;">${result.failureReport.reason}</p>
-          </div>
-        </div>
-        <div class="error-section">
-          <h4>Missing Core Skills</h4>
-          <div class="error-skills-container">${missingSkillsHtml}</div>
-        </div>
-        <div class="error-section">
-          <h4>Diagnostics & Blockers</h4>
-          <ul class="error-diagnostics-list">
-            ${result.failureReport.failingConstraints.map((c, i) => `<li style="animation-delay: ${i*0.15}s">${c}</li>`).join('')}
-          </ul>
-        </div>
-      `;
+      const report = generateReport(result, getActiveGoal(), candidates);
+      renderFailureReport(report);
       setTimeout(() => {
         elErrorModalOverlay.classList.add('open');
       }, 300);
@@ -513,7 +459,131 @@ function runMatching() {
   }, 100);
 }
 
-// --- Physics Loop ---
+// ─── Report Renderers (consume ReportObject from Module 3) ───────────────────
+
+function renderSuccessReport(report) {
+  const sp = report.successPayload;
+  const stats = sp.teamStats;
+
+  // Header stats row
+  elReportContent.innerHTML = `
+    <div class="report-summary-header">
+      <p class="report-headline">${report.summary.headline}</p>
+      <p class="report-subline">${report.summary.subline}</p>
+    </div>
+    <div class="report-stats-row">
+      <div class="stat-chip">⚡ 100% Skill Coverage</div>
+      <div class="stat-chip">👥 ${stats.memberCount} Member${stats.memberCount !== 1 ? 's' : ''}</div>
+      <div class="stat-chip">⭐ ${stats.avgExperienceYears}yr Avg Exp</div>
+      <div class="stat-chip">✅ ${stats.constraintsSatisfied} Constraint${stats.constraintsSatisfied !== 1 ? 's' : ''} Met</div>
+    </div>
+    <div class="report-skill-map">
+      <h4 class="report-section-label">🗺️ Skill → Member Mapping</h4>
+      <div class="skill-map-grid">
+        ${sp.skillMapping.map(entry => `
+          <div class="skill-map-row ${entry.isPrimary ? 'priority' : ''}">
+            <span class="skill-map-tag" style="background:${skillColors[entry.skill] || '#555'}">${entry.skill}${entry.isPrimary ? ' ⭐' : ''}</span>
+            <span class="skill-map-arrow">→</span>
+            <span class="skill-map-member">
+              <strong>${entry.coveredBy}</strong>
+              <span class="skill-map-meta">${entry.proficiency} · ${entry.experienceYears}yr</span>
+            </span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    <h4 class="report-section-label">🧬 Team Roster & Rationale</h4>
+  `;
+
+  // Member cards
+  sp.memberRationales.forEach((member, idx) => {
+    const contribHTML = member.keyContributions.map(s =>
+      `<span class="skill-pill" style="background:${skillColors[s] || '#555'};color:#fff;box-shadow:0 0 5px ${skillColors[s]}">${s} ✓</span>`
+    ).join('');
+
+    elReportContent.innerHTML += `
+      <div class="roster-card" style="animation-delay:${idx * 0.15}s">
+        <div class="roster-avatar" style="background:${getCandidateColor(member.candidateId)}">${getInitials(member.name)}</div>
+        <div class="roster-info">
+          <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+            <h3>${member.name}</h3>
+            <span class="role-badge">${member.role}</span>
+          </div>
+          <p class="roster-rationale">${member.rationale}</p>
+          <div class="roster-skills">${contribHTML}</div>
+          <p class="roster-meta">⭐ ${member.experienceYears}yr Exp · 📁 ${member.pastProjects} Projects</p>
+        </div>
+      </div>
+    `;
+  });
+
+  if (sp.optimizationNote) {
+    elReportContent.innerHTML += `<p class="optimization-note">💡 ${sp.optimizationNote}</p>`;
+  }
+}
+
+function renderFailureReport(report) {
+  const fp = report.failurePayload;
+
+  const missingSkillsHtml = fp.missingSkills.length > 0
+    ? fp.missingSkills.map((ms, i) => `
+        <div class="error-skill-block" style="animation-delay:${i * 0.1}s">
+          <span class="error-skill-pill">⚠️ ${ms.skill}</span>
+          <p class="error-skill-reason">${ms.reason}</p>
+          ${ms.nearMisses.length > 0 ? `
+            <div class="near-misses">
+              <span class="near-miss-label">Near Misses:</span>
+              ${ms.nearMisses.map(nm =>
+                `<span class="near-miss-item" title="${nm.blockedBy}">🔶 ${nm.candidateName}</span>`
+              ).join('')}
+            </div>` : ''}
+        </div>`).join('')
+    : '<span class="error-skill-pill success">✓ All skills coverable</span>';
+
+  const constraintsHtml = fp.failingConstraints.map((c, i) => `
+    <li class="constraint-item" style="animation-delay:${i * 0.12}s">
+      <span class="constraint-type">${c.constraintType}</span>
+      <span class="constraint-param">${c.parameterValue}</span>
+      <span class="constraint-impact">${c.impact}</span>
+    </li>`).join('');
+
+  const fixesHtml = fp.suggestedFixes.map((fix, i) => `
+    <li class="fix-item" style="animation-delay:${i * 0.1}s">
+      <span class="fix-cost">cost ${fix.costScore}</span>
+      <div>
+        <strong>${fix.action}</strong>
+        <p>${fix.detail}</p>
+      </div>
+    </li>`).join('');
+
+  elErrorContent.innerHTML = `
+    <div class="error-reason-box">
+      <div class="error-icon">❌</div>
+      <div>
+        <h3 style="margin-bottom:0.25rem;font-size:1.05rem;">${report.summary.headline}</h3>
+        <p style="font-size:0.85rem;color:#fca5a5">${fp.failureSummary}</p>
+      </div>
+    </div>
+
+    <div class="error-section">
+      <h4>Missing Skills</h4>
+      <div class="error-skills-container">${missingSkillsHtml}</div>
+    </div>
+
+    <div class="error-section">
+      <h4>Constraint Impact Analysis</h4>
+      <ul class="error-diagnostics-list constraint-list">${constraintsHtml}</ul>
+    </div>
+
+    ${fp.suggestedFixes.length > 0 ? `
+    <div class="error-section">
+      <h4>🛠️ Suggested Fixes (sorted by cost)</h4>
+      <ul class="fixes-list">${fixesHtml}</ul>
+    </div>` : ''}
+  `;
+}
+
+
 function startPhysicsLoop() {
   function loop(time) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);

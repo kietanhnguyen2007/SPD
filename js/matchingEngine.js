@@ -416,15 +416,54 @@ function compareProficiency(actualLevel, targetLevel, operator = 'equals') {
 }
 
 function buildSkillMapping(team, requiredSkills) {
-  const mapping = {};
-  requiredSkills.forEach(reqSkill => {
-    const provider = team.find(member => (member.skills || []).includes(reqSkill));
-    if (provider) {
-      mapping[reqSkill] = provider.id;
-    }
+  const PROFICIENCY_RANK = { Expert: 4, Advanced: 3, Intermediate: 2, Beginner: 1 };
+
+  // Build candidate list per skill: sorted by proficiency descending
+  const skillCandidates = {};
+  requiredSkills.forEach(skill => {
+    skillCandidates[skill] = team
+      .filter(m => (m.skills || []).includes(skill))
+      .sort((a, b) => {
+        const ra = PROFICIENCY_RANK[a.proficiency_level?.[skill]] || 0;
+        const rb = PROFICIENCY_RANK[b.proficiency_level?.[skill]] || 0;
+        return rb - ra;
+      });
   });
+
+  // Greedy load-balanced assignment:
+  // Assign each skill to the most-proficient member who has the fewest assignments so far.
+  const assignedCount = {};
+  team.forEach(m => { assignedCount[m.id] = 0; });
+
+  const mapping = {};
+  // Sort skills so that skills with fewer candidates are assigned first (MRV heuristic)
+  const sortedSkills = [...requiredSkills].sort(
+    (a, b) => skillCandidates[a].length - skillCandidates[b].length
+  );
+
+  for (const skill of sortedSkills) {
+    const candidates = skillCandidates[skill];
+    if (candidates.length === 0) continue;
+
+    // Pick the candidate with the highest proficiency; break ties by fewest assignments
+    let best = candidates[0];
+    for (const c of candidates) {
+      const rankC  = PROFICIENCY_RANK[c.proficiency_level?.[skill]] || 0;
+      const rankB  = PROFICIENCY_RANK[best.proficiency_level?.[skill]] || 0;
+      const loadC  = assignedCount[c.id];
+      const loadB  = assignedCount[best.id];
+      if (rankC > rankB || (rankC === rankB && loadC < loadB)) {
+        best = c;
+      }
+    }
+
+    mapping[skill] = best.id;
+    assignedCount[best.id]++;
+  }
+
   return mapping;
 }
+
 
 /**
  * Calculates the minimal reduction in constraints required to find a valid team.
