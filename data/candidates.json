@@ -32,10 +32,11 @@
     "name": "Charlie Brown",
     "experience_years": 2,
     "availability": true,
-    "skills": ["UI/UX Design", "Frontend"],
+    "skills": ["UI/UX Design", "Frontend", "Technical Writing"],
     "proficiency_level": {
       "UI/UX Design": "Intermediate",
-      "Frontend": "Beginner"
+      "Frontend": "Beginner",
+      "Technical Writing": "Beginner"
     },
     "preferred_team_size": { "min": 2, "max": 4 },
     "past_projects_count": 3
@@ -87,10 +88,11 @@
     "name": "George Constanza",
     "experience_years": 7,
     "availability": true,
-    "skills": ["QA Testing", "Database Administration"],
+    "skills": ["QA Testing", "Database Administration", "Backend"],
     "proficiency_level": {
       "QA Testing": "Advanced",
-      "Database Administration": "Intermediate"
+      "Database Administration": "Intermediate",
+      "Backend": "Beginner"
     },
     "preferred_team_size": { "min": 3, "max": 8 },
     "past_projects_count": 14
@@ -128,10 +130,11 @@
     "name": "Julia Roberts",
     "experience_years": 6,
     "availability": false,
-    "skills": ["Frontend", "Mobile Development"],
+    "skills": ["Frontend", "Mobile Development", "UI/UX Design"],
     "proficiency_level": {
       "Frontend": "Advanced",
-      "Mobile Development": "Advanced"
+      "Mobile Development": "Advanced",
+      "UI/UX Design": "Intermediate"
     },
     "preferred_team_size": { "min": 2, "max": 6 },
     "past_projects_count": 10
@@ -141,11 +144,12 @@
     "name": "Kevin Bacon",
     "experience_years": 9,
     "availability": true,
-    "skills": ["DevOps", "Cloud Architecture", "Backend"],
+    "skills": ["DevOps", "Cloud Architecture", "Backend", "Cybersecurity"],
     "proficiency_level": {
       "DevOps": "Expert",
       "Cloud Architecture": "Advanced",
-      "Backend": "Advanced"
+      "Backend": "Advanced",
+      "Cybersecurity": "Intermediate"
     },
     "preferred_team_size": { "min": 3, "max": 10 },
     "past_projects_count": 16
@@ -155,10 +159,11 @@
     "name": "Laura Palmer",
     "experience_years": 1,
     "availability": true,
-    "skills": ["QA Testing", "Technical Writing"],
+    "skills": ["QA Testing", "Technical Writing", "Business Analysis"],
     "proficiency_level": {
       "QA Testing": "Beginner",
-      "Technical Writing": "Beginner"
+      "Technical Writing": "Beginner",
+      "Business Analysis": "Beginner"
     },
     "preferred_team_size": { "min": 2, "max": 4 },
     "past_projects_count": 1
@@ -168,10 +173,11 @@
     "name": "Michael Scott",
     "experience_years": 14,
     "availability": true,
-    "skills": ["Project Management", "Business Analysis"],
+    "skills": ["Project Management", "Business Analysis", "Technical Writing"],
     "proficiency_level": {
       "Project Management": "Expert",
-      "Business Analysis": "Expert"
+      "Business Analysis": "Expert",
+      "Technical Writing": "Advanced"
     },
     "preferred_team_size": { "min": 4, "max": 20 },
     "past_projects_count": 22
@@ -181,10 +187,11 @@
     "name": "Nina Sayers",
     "experience_years": 5,
     "availability": true,
-    "skills": ["Embedded Systems", "Backend"],
+    "skills": ["Embedded Systems", "Backend", "Mobile Development"],
     "proficiency_level": {
       "Embedded Systems": "Advanced",
-      "Backend": "Intermediate"
+      "Backend": "Intermediate",
+      "Mobile Development": "Intermediate"
     },
     "preferred_team_size": { "min": 2, "max": 6 },
     "past_projects_count": 7
@@ -194,11 +201,12 @@
     "name": "Oscar Martinez",
     "experience_years": 11,
     "availability": true,
-    "skills": ["Database Administration", "Backend", "Data Science"],
+    "skills": ["Database Administration", "Backend", "Data Science", "DevOps"],
     "proficiency_level": {
       "Database Administration": "Expert",
       "Backend": "Advanced",
-      "Data Science": "Intermediate"
+      "Data Science": "Intermediate",
+      "DevOps": "Intermediate"
     },
     "preferred_team_size": { "min": 3, "max": 8 },
     "past_projects_count": 20
@@ -208,10 +216,11 @@
     "name": "Pam Beesly",
     "experience_years": 3,
     "availability": true,
-    "skills": ["UI/UX Design", "Technical Writing"],
+    "skills": ["UI/UX Design", "Technical Writing", "Frontend"],
     "proficiency_level": {
       "UI/UX Design": "Intermediate",
-      "Technical Writing": "Advanced"
+      "Technical Writing": "Advanced",
+      "Frontend": "Beginner"
     },
     "preferred_team_size": { "min": 2, "max": 5 },
     "past_projects_count": 5
@@ -221,11 +230,12 @@
     "name": "Quinn Mallory",
     "experience_years": 8,
     "availability": true,
-    "skills": ["Machine Learning", "Backend", "Embedded Systems"],
+    "skills": ["Machine Learning", "Backend", "Embedded Systems", "Data Science"],
     "proficiency_level": {
       "Machine Learning": "Advanced",
       "Backend": "Advanced",
-      "Embedded Systems": "Intermediate"
+      "Embedded Systems": "Intermediate",
+      "Data Science": "Intermediate"
     },
     "preferred_team_size": { "min": 3, "max": 7 },
     "past_projects_count": 11
@@ -235,11 +245,12 @@
     "name": "Rachel Green",
     "experience_years": 2,
     "availability": true,
-    "skills": ["Business Analysis", "QA Testing", "Frontend"],
+    "skills": ["Business Analysis", "QA Testing", "Frontend", "UI/UX Design"],
     "proficiency_level": {
       "Business Analysis": "Intermediate",
       "QA Testing": "Beginner",
-      "Frontend": "Beginner"
+      "Frontend": "Beginner",
+      "UI/UX Design": "Beginner"
     },
     "preferred_team_size": { "min": 2, "max": 4 },
     "past_projects_count": 2
@@ -249,11 +260,12 @@
     "name": "Steve Rogers",
     "experience_years": 13,
     "availability": false,
-    "skills": ["Project Management", "Cybersecurity", "Cloud Architecture"],
+    "skills": ["Project Management", "Cybersecurity", "Cloud Architecture", "Business Analysis"],
     "proficiency_level": {
       "Project Management": "Expert",
       "Cybersecurity": "Advanced",
-      "Cloud Architecture": "Intermediate"
+      "Cloud Architecture": "Intermediate",
+      "Business Analysis": "Advanced"
     },
     "preferred_team_size": { "min": 5, "max": 15 },
     "past_projects_count": 28
@@ -263,11 +275,12 @@
     "name": "Tina Fey",
     "experience_years": 7,
     "availability": true,
-    "skills": ["Frontend", "Backend", "UI/UX Design"],
+    "skills": ["Frontend", "Backend", "UI/UX Design", "QA Testing"],
     "proficiency_level": {
       "Frontend": "Advanced",
       "Backend": "Advanced",
-      "UI/UX Design": "Intermediate"
+      "UI/UX Design": "Intermediate",
+      "QA Testing": "Intermediate"
     },
     "preferred_team_size": { "min": 2, "max": 6 },
     "past_projects_count": 15

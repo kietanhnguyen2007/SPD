@@ -1,7 +1,9 @@
 [
   {
+    "id": "goal_01",
     "project_name": "Web App MVP",
-    "required_skills": ["Frontend", "Backend"],
+    "description": "A standard web application requiring a balanced full-stack team. Happy-path scenario designed to find a valid team easily.",
+    "required_skills": ["Frontend", "Backend", "UI/UX Design"],
     "team_size": {
       "min": 2,
       "max": 4
@@ -19,10 +21,12 @@
         "operator": "greater_than_or_equals"
       }
     ],
-    "priority_skills": ["Frontend"]
+    "priority_skills": ["Frontend", "Backend"]
   },
   {
+    "id": "goal_02",
     "project_name": "Secure AI Platform",
+    "description": "A high-security AI platform requiring senior specialists. Strict constraints on experience and availability filter heavily, but a valid team exists.",
     "required_skills": ["Machine Learning", "Cybersecurity", "Cloud Architecture"],
     "team_size": {
       "min": 3,
@@ -39,8 +43,10 @@
     "priority_skills": ["Cybersecurity", "Machine Learning"]
   },
   {
+    "id": "goal_03",
     "project_name": "Quantum Mobile OS",
-    "required_skills": ["Mobile Development", "Embedded Systems", "Data Science", "UI/UX Design"],
+    "description": "An intentionally impossible scenario. Requires Quantum Computing (a skill no candidate possesses) and demands Expert-level Embedded Systems with 15+ years experience available simultaneously. Tests the exception-handling flow (Flow 6).",
+    "required_skills": ["Quantum Computing", "Mobile Development", "Embedded Systems"],
     "team_size": {
       "min": 1,
       "max": 2
@@ -58,6 +64,7 @@
         "level": "Expert",
         "operator": "equals"
       }
-    ]
+    ],
+    "priority_skills": []
   }
 ]

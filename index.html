@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Team Crystallizer | SPD 2026</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="glass-panel header">
+      <div class="brand">
+        <h1>🔬 Team Crystallizer</h1>
+        <span class="tagline">drop the vibes, build the dream team fr 💅</span>
+      </div>
+      <div class="quick-load">
+        <label for="scenario-select">load a scenario (or wing it)</label>
+        <select id="scenario-select">
+          <option value="">-- custom vibe --</option>
+          <option value="goal_01">Web App MVP</option>
+          <option value="goal_02">Secure AI Platform</option>
+          <option value="goal_03">Quantum Mobile OS 💀</option>
+        </select>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="workspace">
+      <!-- Left Panel: Goal Config -->
+      <aside class="glass-panel goal-config">
+        <h2>Goal Configuration</h2>
+        
+        <div class="form-group">
+          <label>Required Skills:</label>
+          <div id="skills-container" class="skills-container">
+            <!-- Skill pills populated by JS -->
+          </div>
+          <select id="skill-picker" class="dropdown-add">
+            <option value="">+ drop a skill</option>
+          </select>
+        </div>
+
+        <div class="form-group slider-group">
+          <label>Team Size: <span id="size-val">2 - 5</span></label>
+          <div class="multi-range">
+            <input type="range" id="size-min" min="1" max="20" value="2">
+            <input type="range" id="size-max" min="1" max="20" value="5">
+          </div>
+        </div>
+
+        <div class="form-group slider-group">
+          <label>Min Experience: <span id="exp-val">2yr</span></label>
+          <input type="range" id="min-exp" min="0" max="15" value="2">
+        </div>
+
+        <div class="form-group">
+          <label>Constraints (the fine print 📋):</label>
+          <div class="checkbox-group">
+            <input type="checkbox" id="require-available" checked>
+            <label for="require-available">Available only ✅</label>
+          </div>
+          <!-- Dynamic constraints can be added here -->
+        </div>
+
+        <div class="actions">
+          <button id="btn-crystallize" class="btn-primary">🔮 Crystallize My Team</button>
+          <button id="btn-reset" class="btn-secondary">Reset ↺</button>
+        </div>
+      </aside>
+
+      <!-- Right Panel: Canvas Visualization -->
+      <section class="canvas-container glass-panel">
+        <canvas id="physics-canvas"></canvas>
+        <div class="canvas-overlay" id="canvas-overlay">
+          <span class="hint">20 candidates floating around — pick a goal and watch the magic 🪄</span>
+        </div>
+        <div class="status-bar" id="status-bar">
+          <span id="status-text">Idle</span>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom Panel: Candidates Grid -->
+    <section class="glass-panel candidates-section">
+      <div class="grid-header">
+        <h2>the candidate pool <span class="count-badge" id="pool-count">20 ready</span></h2>
+        <input type="text" id="candidate-search" placeholder="🔍 search by name...">
+      </div>
+      <div class="candidates-grid" id="candidates-grid">
+        <!-- Cards populated by JS -->
+      </div>
+      <div id="empty-search" class="hidden">nobody by that name bestie, try again 🤷</div>
+    </section>
+
+    <!-- Right Drawer: Success Report -->
+    <aside class="report-drawer glass-panel" id="report-drawer">
+      <button class="close-btn" id="close-report">×</button>
+      <h2>why this team? the breakdown 🧬</h2>
+      <div id="report-content" class="report-content">
+        <!-- Mapping goes here -->
+      </div>
+      <div class="drawer-footer">
+        <p class="hype-text">this team hits different 🔮 run it</p>
+      </div>
+    </aside>
+
+    <!-- Bottom Drawer: Failure Diagnostics -->
+    <aside class="error-drawer glass-panel" id="error-drawer">
+      <div class="error-header">
+        <h2>🧪 the chemistry isn't there... yet</h2>
+        <button class="close-btn" id="close-error">×</button>
+      </div>
+      <div class="error-content" id="error-content">
+        <!-- Error details -->
+      </div>
+      <div class="error-actions">
+        <button id="btn-loosen" class="btn-primary">loosen the constraints →</button>
+        <button id="btn-different-vibe" class="btn-secondary">try a different vibe</button>
+      </div>
+    </aside>
+
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
