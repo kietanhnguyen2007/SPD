@@ -144,6 +144,13 @@ export function findOptimalTeam(candidates, projectGoal) {
   // Step 7: Format Output Result
   if (isSuccess) {
     const solutionTeam = currentTeamIndices.map(idx => relevantPool[idx].candidate);
+    
+    // Safety Assertion: Strict Uniqueness Constraint
+    const uniqueIds = new Set(solutionTeam.map(m => m.id));
+    if (solutionTeam.length !== uniqueIds.size) {
+      throw new Error(`CRITICAL ALGORITHM FAILURE: Duplicate candidate detected in the generated team. Team size: ${solutionTeam.length}, Unique IDs: ${uniqueIds.size}`);
+    }
+
     const skillMapping = buildSkillMapping(solutionTeam, requiredSkills);
     return {
       success: true,

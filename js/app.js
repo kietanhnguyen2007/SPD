@@ -374,19 +374,38 @@ function runMatching() {
       // Populate Report
       setTimeout(() => {
         const currentGoal = getActiveGoal();
-        elReportContent.innerHTML = '';
-        currentGoal.required_skills.forEach(s => {
-          const providerId = result.skillMapping[s];
-          const provider = candidates.find(c => c.id === providerId);
-          if (provider) {
-            const level = provider.proficiency_level[s] || 'Known';
-            elReportContent.innerHTML += `
-              <div class="skill-match-row">
-                <span><span style="color:${skillColors[s]}">■</span> ${s}</span>
-                <span style="color:var(--text-muted);font-size:0.85rem">→ ${provider.name} (${level}) ✓</span>
+        elReportContent.innerHTML = `
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <div class="status-chip">⚡ 100% Skill Coverage</div>
+            <div class="status-chip">👥 Optimal Team Size</div>
+          </div>
+        `;
+        
+        result.team.forEach((member, idx) => {
+          // Highlight skills that matched the requirement
+          const providedSkills = member.skills.filter(s => currentGoal.required_skills.includes(s));
+          const otherSkills = member.skills.filter(s => !currentGoal.required_skills.includes(s));
+          
+          let skillsHTML = providedSkills.map(s => 
+            `<span class="skill-pill" style="background:${skillColors[s]||'#555'};color:#fff; box-shadow: 0 0 5px ${skillColors[s]};">${s} ✓</span>`
+          ).join('');
+          
+          skillsHTML += otherSkills.map(s => 
+            `<span class="skill-pill" style="background:rgba(255,255,255,0.05);color:var(--text-muted); border: 1px solid var(--glass-border);">${s}</span>`
+          ).join('');
+
+          elReportContent.innerHTML += `
+            <div class="roster-card" style="animation-delay: ${idx * 0.15}s">
+              <div class="roster-avatar" style="background:${getCandidateColor(member.id)}">${getInitials(member.name)}</div>
+              <div class="roster-info">
+                <h3>${member.name}</h3>
+                <p style="font-size:0.75rem; color:var(--text-muted)">⭐ ${member.experience_years}yr Exp | 📁 ${member.past_projects_count || 0} Projects</p>
+                <div class="roster-skills">
+                  ${skillsHTML}
+                </div>
               </div>
-            `;
-          }
+            </div>
+          `;
         });
         elReportDrawer.classList.add('open');
       }, 600);
