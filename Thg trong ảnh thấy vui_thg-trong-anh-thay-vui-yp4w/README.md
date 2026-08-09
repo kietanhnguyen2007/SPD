@@ -48,5 +48,5 @@ Sau đó truy cập vào địa chỉ được hiển thị trên Terminal (thư
 ## 7. Tên đội và vai trò của hai thành viên
 - **Tên đội**: Thg trong ảnh thấy vui (login: `thg-trong-anh-thay-vui-yp4w`)
 - **Vai trò**:
-  - **Thành viên 1**: Đảm nhiệm phát triển thuật toán (Algorithm/Logic), quản lý cấu trúc dữ liệu.
-  - **Thành viên 2**: Đảm nhiệm phát triển giao diện (UI/UX), thiết kế luồng trải nghiệm người dùng.
+  - **Thành viên 1**: Nguyễn Anh Kiệt – Điều phối AI.
+  - **Thành viên 2**: Đặng Minh Nhật – Kỹ sư trình bày.

@@ -1224,3 +1224,10 @@ Ok chỉnh lại theo đúng cấu trúc để tôi nộp, thêm prompt này và
 
 ---
 
+### 🧑‍💻 User
+
+Thành viên 1: Điều phối AI( Nguyễn Anh Kiệt).
+Thành viên 2: Kỹ sư trình bày( Đặng Minh Nhật) 
+
+---
+
