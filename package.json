@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "test": "node tests/matchingEngine.test.js"
+    "dev": "npx serve src --listen 5173",
+    "test": "node src/tests/matchingEngine.test.js"
   }
 }
