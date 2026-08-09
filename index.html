@@ -106,20 +106,22 @@
       </div>
     </aside>
 
-    <!-- Bottom Drawer: Failure Diagnostics -->
-    <aside class="error-drawer glass-panel" id="error-drawer">
-      <div class="error-header">
-        <h2>🧪 the chemistry isn't there... yet</h2>
-        <button class="close-btn" id="close-error">×</button>
+    <!-- Centered Error Modal Overlay -->
+    <div class="error-modal-overlay" id="error-modal-overlay">
+      <div class="error-modal glass-panel">
+        <div class="error-header">
+          <h2>🧪 the chemistry isn't there... yet</h2>
+          <button class="close-btn" id="close-error">×</button>
+        </div>
+        <div class="error-content" id="error-content">
+          <!-- Error details -->
+        </div>
+        <div class="error-actions">
+          <button id="btn-loosen" class="btn-primary">⚡ Smart Loosen Constraints</button>
+          <button id="btn-different-vibe" class="btn-secondary">try a different vibe</button>
+        </div>
       </div>
-      <div class="error-content" id="error-content">
-        <!-- Error details -->
-      </div>
-      <div class="error-actions">
-        <button id="btn-loosen" class="btn-primary">loosen the constraints →</button>
-        <button id="btn-different-vibe" class="btn-secondary">try a different vibe</button>
-      </div>
-    </aside>
+    </div>
 
   </div>
 

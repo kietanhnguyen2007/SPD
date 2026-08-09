@@ -1,4 +1,4 @@
-import { findOptimalTeam, isCandidateEligible } from './matchingEngine.js';
+import { findOptimalTeam, isCandidateEligible, calculateMinimalLoosen } from './matchingEngine.js';
 import {
   bootstrap,
   getCandidates,
@@ -50,7 +50,7 @@ const elReportDrawer = document.getElementById('report-drawer');
 const elCloseReport = document.getElementById('close-report');
 const elReportContent = document.getElementById('report-content');
 
-const elErrorDrawer = document.getElementById('error-drawer');
+const elErrorModalOverlay = document.getElementById('error-modal-overlay');
 const elCloseError = document.getElementById('close-error');
 const elErrorContent = document.getElementById('error-content');
 const elBtnLoosen = document.getElementById('btn-loosen');
@@ -77,15 +77,26 @@ async function init() {
   // Extract all skills and assign colors
   const hues = [250, 190, 280, 320, 150, 30, 200, 340, 10, 170];
   let hueIdx = 0;
-  candidates.forEach(c => {
-    c.skills.forEach(s => {
-      allSkills.add(s);
-      if (!skillColors[s]) {
-        skillColors[s] = `hsl(${hues[hueIdx % hues.length]}, 80%, 60%)`;
-        hueIdx++;
-      }
+  
+  const addSkill = (s) => {
+    allSkills.add(s);
+    if (!skillColors[s]) {
+      skillColors[s] = `hsl(${hues[hueIdx % hues.length]}, 80%, 60%)`;
+      hueIdx++;
+    }
+  };
+
+  candidates.forEach(c => c.skills.forEach(addSkill));
+
+  try {
+    const res = await fetch('data/project_goals.json');
+    const goals = await res.json();
+    Object.values(goals).forEach(g => {
+      (g.required_skills || []).forEach(addSkill);
     });
-  });
+  } catch (e) {
+    console.warn("Could not fetch project goals for skill extraction.");
+  }
 
   populateSkillPicker();
   renderGoalConfig();
@@ -156,18 +167,64 @@ function setupEventListeners() {
   });
 
   elCloseReport.addEventListener('click', () => elReportDrawer.classList.remove('open'));
-  elCloseError.addEventListener('click', () => elErrorDrawer.classList.remove('open'));
+  elCloseError.addEventListener('click', () => elErrorModalOverlay.classList.remove('open'));
   elBtnLoosen.addEventListener('click', () => {
-    elErrorDrawer.classList.remove('open');
-    const current = getActiveGoal().min_experience_years;
-    const newVal = Math.max(0, current - 2);
-    setMinExperience(newVal);  // DataStore CRUD
-    elMinExp.value = newVal;
-    elExpVal.textContent = `${newVal}yr`;
-    triggerCanvasReact();
+    elBtnLoosen.disabled = true;
+    elBtnLoosen.textContent = '⚡ Calculating...';
+    
+    setTimeout(() => {
+      const currentGoal = getActiveGoal();
+      const result = calculateMinimalLoosen(candidates, currentGoal);
+      
+      if (result.success && result.minimalGoal) {
+        // Apply the exact minimal constraints found
+        if (result.minimalGoal.min_experience_years !== currentGoal.min_experience_years) {
+          setMinExperience(result.minimalGoal.min_experience_years);
+          elMinExp.value = result.minimalGoal.min_experience_years;
+          elExpVal.textContent = `${result.minimalGoal.min_experience_years}yr`;
+        }
+        
+        if (result.minimalGoal.team_size.max !== currentGoal.team_size?.max) {
+          setTeamSize(result.minimalGoal.team_size.min, result.minimalGoal.team_size.max);
+          elSizeMax.value = result.minimalGoal.team_size.max;
+          elSizeVal.textContent = `${result.minimalGoal.team_size.min} - ${result.minimalGoal.team_size.max}`;
+        }
+        
+        // Sync additional constraints
+        const currentConstraints = currentGoal.additional_constraints || [];
+        const newConstraints = result.minimalGoal.additional_constraints || [];
+        const droppedConstraints = currentConstraints.filter(c1 => 
+          !newConstraints.some(c2 => c1.type === c2.type && c1.skill === c2.skill && c1.level === c2.level)
+        );
+        
+        droppedConstraints.forEach(c => {
+          // get the live active goal and find the correct index to remove
+          const liveGoal = getActiveGoal();
+          const idx = liveGoal.additional_constraints.findIndex(c_act => 
+            c_act.type === c.type && c_act.skill === c.skill && c_act.level === c.level
+          );
+          if (idx >= 0) removeConstraint(idx);
+          if (c.type === 'availability') elRequireAvailable.checked = false;
+        });
+
+        const droppedSkills = (currentGoal.required_skills || []).filter(s => !(result.minimalGoal.required_skills || []).includes(s));
+        droppedSkills.forEach(skill => {
+          removeSkill(skill);
+        });
+        
+        elErrorModalOverlay.classList.remove('open');
+        elStatusText.textContent = `⚡ Smart Loosen: ${result.changes.join(' & ')}`;
+        runMatching();
+      } else {
+        elStatusText.textContent = "❌ Even with loosened constraints, no team can be formed.";
+      }
+      
+      elBtnLoosen.disabled = false;
+      elBtnLoosen.textContent = '⚡ Smart Loosen Constraints';
+    }, 100);
   });
   document.getElementById('btn-different-vibe').addEventListener('click', () => {
-    elErrorDrawer.classList.remove('open');
+    elErrorModalOverlay.classList.remove('open');
   });
 }
 
@@ -282,7 +339,7 @@ function triggerCanvasReact() {
   elCanvasOverlay.classList.add('hidden');
   canvasData.mode = 'idle';
   elReportDrawer.classList.remove('open');
-  elErrorDrawer.classList.remove('open');
+  elErrorModalOverlay.classList.remove('open');
 
   const goal = getActiveGoal();
   if (goal.required_skills.length > 0) {
@@ -320,7 +377,7 @@ function resetCanvas() {
   elStatusText.textContent = "Idle";
   elCanvasOverlay.classList.remove('hidden');
   elReportDrawer.classList.remove('open');
-  elErrorDrawer.classList.remove('open');
+  elErrorModalOverlay.classList.remove('open');
 }
 
 function highlightAtom(id, state) {
@@ -350,7 +407,7 @@ function runMatching() {
   canvasData.mode = 'active';
   elStatusText.textContent = `analyzing ${candidates.length} candidates, hold tight 🧪`;
   elReportDrawer.classList.remove('open');
-  elErrorDrawer.classList.remove('open');
+  elErrorModalOverlay.classList.remove('open');
 
   setTimeout(() => {
     const t0 = performance.now();
@@ -450,7 +507,7 @@ function runMatching() {
         </div>
       `;
       setTimeout(() => {
-        elErrorDrawer.classList.add('open');
+        elErrorModalOverlay.classList.add('open');
       }, 300);
     }
   }, 100);

@@ -425,3 +425,131 @@ function buildSkillMapping(team, requiredSkills) {
   });
   return mapping;
 }
+
+/**
+ * Calculates the minimal reduction in constraints required to find a valid team.
+ * Uses Breadth-First Search (BFS) over the constraint state space.
+ */
+export function calculateMinimalLoosen(candidates, currentGoal) {
+  const poolSkills = new Set();
+  candidates.forEach(c => (c.skills || []).forEach(s => poolSkills.add(s)));
+
+  const initialState = {
+    exp: currentGoal.min_experience_years || 0,
+    maxSize: currentGoal.team_size?.max || candidates.length,
+    reqSkills: currentGoal.required_skills || [],
+    activeConstraints: currentGoal.additional_constraints ? currentGoal.additional_constraints.map((_, i) => i) : []
+  };
+
+  const queue = [{ state: initialState, steps: 0, path: [] }];
+  const visited = new Set();
+  
+  function getStateKey(s) {
+    return `${s.exp}-${s.maxSize}-${s.reqSkills.slice().sort().join(',')}-${s.activeConstraints.slice().sort().join(',')}`;
+  }
+  visited.add(getStateKey(initialState));
+
+  let iterations = 0;
+  const MAX_ITERATIONS = 800;
+
+  while (queue.length > 0 && iterations < MAX_ITERATIONS) {
+    iterations++;
+    const current = queue.shift();
+    const s = current.state;
+
+    // Build mock goal
+    const mockConstraints = s.activeConstraints.map(i => currentGoal.additional_constraints[i]);
+
+    const mockGoal = {
+      ...currentGoal,
+      min_experience_years: s.exp,
+      team_size: { min: currentGoal.team_size?.min || 1, max: s.maxSize },
+      additional_constraints: mockConstraints,
+      required_skills: s.reqSkills
+    };
+
+    // Test constraint configuration
+    const result = findOptimalTeam(candidates, mockGoal);
+    if (result.success) {
+      return {
+        success: true,
+        minimalGoal: mockGoal,
+        steps: current.steps,
+        changes: current.path
+      };
+    }
+
+    // Enqueue neighbors (loosened states)
+    
+    // 1. Decrease experience
+    if (s.exp > 0) {
+      const nextState = { ...s, exp: s.exp - 1 };
+      const keyExp = getStateKey(nextState);
+      if (!visited.has(keyExp)) {
+        visited.add(keyExp);
+        queue.push({
+          state: nextState,
+          steps: current.steps + 1,
+          path: [...current.path, 'Reduced experience by 1yr']
+        });
+      }
+    }
+
+    // 2. Increase max team size
+    if (s.maxSize < candidates.length) {
+      const nextState = { ...s, maxSize: s.maxSize + 1 };
+      const keySize = getStateKey(nextState);
+      if (!visited.has(keySize)) {
+        visited.add(keySize);
+        queue.push({
+          state: nextState,
+          steps: current.steps + 1,
+          path: [...current.path, 'Increased max team size by 1']
+        });
+      }
+    }
+
+    // 3. Remove an additional constraint
+    for (let i = 0; i < s.activeConstraints.length; i++) {
+      const nextConstraints = [...s.activeConstraints];
+      nextConstraints.splice(i, 1);
+      const nextState = { ...s, activeConstraints: nextConstraints };
+      const keyConstr = getStateKey(nextState);
+      if (!visited.has(keyConstr)) {
+        visited.add(keyConstr);
+        const droppedC = currentGoal.additional_constraints[s.activeConstraints[i]];
+        const constraintName = droppedC.type === 'proficiency_level' ? `${droppedC.skill} ${droppedC.level}` : droppedC.type;
+        queue.push({
+          state: nextState,
+          steps: current.steps + 1,
+          path: [...current.path, `Dropped constraint: ${constraintName}`]
+        });
+      }
+    }
+    
+    // 4. Drop an impossible skill (a skill nobody in the pool has, or just one that causes failure)
+    // To keep BFS efficient, we only drop a skill if it's strictly missing from the pool, OR if we are desperate.
+    // Actually, letting it drop ANY skill is the most robust, but to avoid combinatorial explosion, 
+    // we prioritize dropping skills that NO ONE has.
+    for (let i = 0; i < s.reqSkills.length; i++) {
+      const skillToDrop = s.reqSkills[i];
+      // If it's missing from the pool, dropping it is a 1-step move.
+      if (!poolSkills.has(skillToDrop)) {
+        const nextSkills = [...s.reqSkills];
+        nextSkills.splice(i, 1);
+        const nextState = { ...s, reqSkills: nextSkills };
+        const keySkill = getStateKey(nextState);
+        if (!visited.has(keySkill)) {
+          visited.add(keySkill);
+          queue.push({
+            state: nextState,
+            steps: current.steps + 1,
+            path: [...current.path, `Dropped missing skill: ${skillToDrop}`]
+          });
+        }
+      }
+    }
+  }
+
+  return { success: false, minimalGoal: null, steps: 0, changes: [] };
+}
