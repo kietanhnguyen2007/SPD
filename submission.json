@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "team_name": "Thg trong ảnh thấy vui",
+  "login": "thg-trong-anh-thay-vui-yp4w",
+  "source_paths": [
+    "js",
+    "tests",
+    "data"
+  ],
+  "dependency_files": [
+    "package.json"
+  ],
+  "run_command": "npm test",
+  "project_technology": "Node.js (Vanilla JavaScript)"
+}

@@ -128,3 +128,10 @@ public
 # Project specific
 .gemini
 .venv
+.agents/
+
+# Agent skills
+Agent_Skills_Library_2026.md
+How_To_Use_Agent_Skills.md
+Prompt_Engineering_QuyTac_2026.md
+agent.md

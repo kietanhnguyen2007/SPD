@@ -1,0 +1,63 @@
+[
+  {
+    "project_name": "Web App MVP",
+    "required_skills": ["Frontend", "Backend"],
+    "team_size": {
+      "min": 2,
+      "max": 4
+    },
+    "min_experience_years": 2,
+    "additional_constraints": [
+      {
+        "type": "availability",
+        "value": true,
+        "operator": "equals"
+      },
+      {
+        "type": "past_projects_count",
+        "value": 3,
+        "operator": "greater_than_or_equals"
+      }
+    ],
+    "priority_skills": ["Frontend"]
+  },
+  {
+    "project_name": "Secure AI Platform",
+    "required_skills": ["Machine Learning", "Cybersecurity", "Cloud Architecture"],
+    "team_size": {
+      "min": 3,
+      "max": 5
+    },
+    "min_experience_years": 8,
+    "additional_constraints": [
+      {
+        "type": "availability",
+        "value": true,
+        "operator": "equals"
+      }
+    ],
+    "priority_skills": ["Cybersecurity", "Machine Learning"]
+  },
+  {
+    "project_name": "Quantum Mobile OS",
+    "required_skills": ["Mobile Development", "Embedded Systems", "Data Science", "UI/UX Design"],
+    "team_size": {
+      "min": 1,
+      "max": 2
+    },
+    "min_experience_years": 15,
+    "additional_constraints": [
+      {
+        "type": "availability",
+        "value": true,
+        "operator": "equals"
+      },
+      {
+        "type": "proficiency_level",
+        "skill": "Embedded Systems",
+        "level": "Expert",
+        "operator": "equals"
+      }
+    ]
+  }
+]

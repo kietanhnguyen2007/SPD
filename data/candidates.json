@@ -1,0 +1,275 @@
+[
+  {
+    "id": "c01",
+    "name": "Alice Smith",
+    "experience_years": 5,
+    "availability": true,
+    "skills": ["Frontend", "Backend", "UI/UX Design"],
+    "proficiency_level": {
+      "Frontend": "Expert",
+      "Backend": "Intermediate",
+      "UI/UX Design": "Beginner"
+    },
+    "preferred_team_size": { "min": 2, "max": 5 },
+    "past_projects_count": 8
+  },
+  {
+    "id": "c02",
+    "name": "Bob Jones",
+    "experience_years": 8,
+    "availability": true,
+    "skills": ["Data Science", "Machine Learning", "Backend"],
+    "proficiency_level": {
+      "Data Science": "Expert",
+      "Machine Learning": "Advanced",
+      "Backend": "Intermediate"
+    },
+    "preferred_team_size": { "min": 3, "max": 8 },
+    "past_projects_count": 12
+  },
+  {
+    "id": "c03",
+    "name": "Charlie Brown",
+    "experience_years": 2,
+    "availability": true,
+    "skills": ["UI/UX Design", "Frontend"],
+    "proficiency_level": {
+      "UI/UX Design": "Intermediate",
+      "Frontend": "Beginner"
+    },
+    "preferred_team_size": { "min": 2, "max": 4 },
+    "past_projects_count": 3
+  },
+  {
+    "id": "c04",
+    "name": "Diana Prince",
+    "experience_years": 12,
+    "availability": false,
+    "skills": ["Project Management", "Business Analysis", "Technical Writing"],
+    "proficiency_level": {
+      "Project Management": "Expert",
+      "Business Analysis": "Advanced",
+      "Technical Writing": "Intermediate"
+    },
+    "preferred_team_size": { "min": 5, "max": 15 },
+    "past_projects_count": 25
+  },
+  {
+    "id": "c05",
+    "name": "Ethan Hunt",
+    "experience_years": 15,
+    "availability": true,
+    "skills": ["Cybersecurity", "Cloud Architecture", "Backend"],
+    "proficiency_level": {
+      "Cybersecurity": "Expert",
+      "Cloud Architecture": "Expert",
+      "Backend": "Advanced"
+    },
+    "preferred_team_size": { "min": 2, "max": 10 },
+    "past_projects_count": 30
+  },
+  {
+    "id": "c06",
+    "name": "Fiona Gallagher",
+    "experience_years": 4,
+    "availability": true,
+    "skills": ["Mobile Development", "Frontend", "UI/UX Design"],
+    "proficiency_level": {
+      "Mobile Development": "Advanced",
+      "Frontend": "Intermediate",
+      "UI/UX Design": "Beginner"
+    },
+    "preferred_team_size": { "min": 2, "max": 6 },
+    "past_projects_count": 6
+  },
+  {
+    "id": "c07",
+    "name": "George Constanza",
+    "experience_years": 7,
+    "availability": true,
+    "skills": ["QA Testing", "Database Administration"],
+    "proficiency_level": {
+      "QA Testing": "Advanced",
+      "Database Administration": "Intermediate"
+    },
+    "preferred_team_size": { "min": 3, "max": 8 },
+    "past_projects_count": 14
+  },
+  {
+    "id": "c08",
+    "name": "Hannah Abbott",
+    "experience_years": 3,
+    "availability": true,
+    "skills": ["Backend", "Database Administration", "DevOps"],
+    "proficiency_level": {
+      "Backend": "Intermediate",
+      "Database Administration": "Beginner",
+      "DevOps": "Beginner"
+    },
+    "preferred_team_size": { "min": 2, "max": 5 },
+    "past_projects_count": 4
+  },
+  {
+    "id": "c09",
+    "name": "Ian Malcolm",
+    "experience_years": 10,
+    "availability": true,
+    "skills": ["Data Science", "Machine Learning", "Cloud Architecture"],
+    "proficiency_level": {
+      "Data Science": "Expert",
+      "Machine Learning": "Expert",
+      "Cloud Architecture": "Advanced"
+    },
+    "preferred_team_size": { "min": 4, "max": 12 },
+    "past_projects_count": 18
+  },
+  {
+    "id": "c10",
+    "name": "Julia Roberts",
+    "experience_years": 6,
+    "availability": false,
+    "skills": ["Frontend", "Mobile Development"],
+    "proficiency_level": {
+      "Frontend": "Advanced",
+      "Mobile Development": "Advanced"
+    },
+    "preferred_team_size": { "min": 2, "max": 6 },
+    "past_projects_count": 10
+  },
+  {
+    "id": "c11",
+    "name": "Kevin Bacon",
+    "experience_years": 9,
+    "availability": true,
+    "skills": ["DevOps", "Cloud Architecture", "Backend"],
+    "proficiency_level": {
+      "DevOps": "Expert",
+      "Cloud Architecture": "Advanced",
+      "Backend": "Advanced"
+    },
+    "preferred_team_size": { "min": 3, "max": 10 },
+    "past_projects_count": 16
+  },
+  {
+    "id": "c12",
+    "name": "Laura Palmer",
+    "experience_years": 1,
+    "availability": true,
+    "skills": ["QA Testing", "Technical Writing"],
+    "proficiency_level": {
+      "QA Testing": "Beginner",
+      "Technical Writing": "Beginner"
+    },
+    "preferred_team_size": { "min": 2, "max": 4 },
+    "past_projects_count": 1
+  },
+  {
+    "id": "c13",
+    "name": "Michael Scott",
+    "experience_years": 14,
+    "availability": true,
+    "skills": ["Project Management", "Business Analysis"],
+    "proficiency_level": {
+      "Project Management": "Expert",
+      "Business Analysis": "Expert"
+    },
+    "preferred_team_size": { "min": 4, "max": 20 },
+    "past_projects_count": 22
+  },
+  {
+    "id": "c14",
+    "name": "Nina Sayers",
+    "experience_years": 5,
+    "availability": true,
+    "skills": ["Embedded Systems", "Backend"],
+    "proficiency_level": {
+      "Embedded Systems": "Advanced",
+      "Backend": "Intermediate"
+    },
+    "preferred_team_size": { "min": 2, "max": 6 },
+    "past_projects_count": 7
+  },
+  {
+    "id": "c15",
+    "name": "Oscar Martinez",
+    "experience_years": 11,
+    "availability": true,
+    "skills": ["Database Administration", "Backend", "Data Science"],
+    "proficiency_level": {
+      "Database Administration": "Expert",
+      "Backend": "Advanced",
+      "Data Science": "Intermediate"
+    },
+    "preferred_team_size": { "min": 3, "max": 8 },
+    "past_projects_count": 20
+  },
+  {
+    "id": "c16",
+    "name": "Pam Beesly",
+    "experience_years": 3,
+    "availability": true,
+    "skills": ["UI/UX Design", "Technical Writing"],
+    "proficiency_level": {
+      "UI/UX Design": "Intermediate",
+      "Technical Writing": "Advanced"
+    },
+    "preferred_team_size": { "min": 2, "max": 5 },
+    "past_projects_count": 5
+  },
+  {
+    "id": "c17",
+    "name": "Quinn Mallory",
+    "experience_years": 8,
+    "availability": true,
+    "skills": ["Machine Learning", "Backend", "Embedded Systems"],
+    "proficiency_level": {
+      "Machine Learning": "Advanced",
+      "Backend": "Advanced",
+      "Embedded Systems": "Intermediate"
+    },
+    "preferred_team_size": { "min": 3, "max": 7 },
+    "past_projects_count": 11
+  },
+  {
+    "id": "c18",
+    "name": "Rachel Green",
+    "experience_years": 2,
+    "availability": true,
+    "skills": ["Business Analysis", "QA Testing", "Frontend"],
+    "proficiency_level": {
+      "Business Analysis": "Intermediate",
+      "QA Testing": "Beginner",
+      "Frontend": "Beginner"
+    },
+    "preferred_team_size": { "min": 2, "max": 4 },
+    "past_projects_count": 2
+  },
+  {
+    "id": "c19",
+    "name": "Steve Rogers",
+    "experience_years": 13,
+    "availability": false,
+    "skills": ["Project Management", "Cybersecurity", "Cloud Architecture"],
+    "proficiency_level": {
+      "Project Management": "Expert",
+      "Cybersecurity": "Advanced",
+      "Cloud Architecture": "Intermediate"
+    },
+    "preferred_team_size": { "min": 5, "max": 15 },
+    "past_projects_count": 28
+  },
+  {
+    "id": "c20",
+    "name": "Tina Fey",
+    "experience_years": 7,
+    "availability": true,
+    "skills": ["Frontend", "Backend", "UI/UX Design"],
+    "proficiency_level": {
+      "Frontend": "Advanced",
+      "Backend": "Advanced",
+      "UI/UX Design": "Intermediate"
+    },
+    "preferred_team_size": { "min": 2, "max": 6 },
+    "past_projects_count": 15
+  }
+]
