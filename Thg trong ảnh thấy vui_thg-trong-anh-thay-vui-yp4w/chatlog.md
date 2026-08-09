@@ -1175,3 +1175,52 @@ phải bọc 1 folder [TênĐội]_[Tên đăng nhập]/ ở bên ngoài ? thêm
 ---
 
 
+### 🧑‍💻 User
+
+Cấu trúc bắt buộc
+Repository hoặc thư mục gốc mà hệ thống nhận được phải có cấu trúc tối thiểu sau:
+[TênĐội]_[Tên đăng nhập]/ ├── README.md ├── chatlog.md ├── submission.json ├── .gitignore ├── <dependency-file> └── <source-path>/ └── <mã nguồn của dự án>
+Trong đó:
+[TênĐội]_[Tên đăng nhập] phải khớp với thông tin đăng ký trên hệ thống thi.
+README.md là tài liệu hướng dẫn dự án.
+chatlog.md là toàn bộ lịch sử tương tác với AI trong thời gian thi.
+submission.json là tệp khai báo cấu trúc để hệ thống chấm xác định vị trí mã nguồn và cách chạy dự án.
+.gitignore phải loại trừ khóa bí mật, tệp môi trường riêng và thư mục phụ thuộc/build không cần thiết.
+<dependency-file> là tệp khai báo phụ thuộc phù hợp với công nghệ sử dụng, chẳng hạn package.json, pyproject.toml, requirements.txt, pom.xml, build.gradle, Cargo.toml hoặc tệp tương đương được khai báo trong submission.json.
+<source-path> có thể là src/, app/, frontend/, backend/ hoặc cấu trúc phù hợp với framework; đường dẫn thực tế phải được khai báo trong submission.json.
+Yêu cầu đối với submission.json
+Tệp phải là JSON hợp lệ và có tối thiểu các trường sau:
+{ "schema_version": "1.0", "team_name": "TênĐội", "login": "Tên đăng nhập", "source_paths": ["src"], "dependency_files": ["package.json"], "run_command": "npm run dev" }
+Quy tắc kiểm tra:
+schema_version phải là "1.0".
+team_name và login phải khớp thông tin đăng ký.
+source_paths phải là mảng không rỗng; mọi đường dẫn được khai báo phải tồn tại, nằm bên trong thư mục gốc và chứa mã nguồn.
+dependency_files phải là mảng không rỗng; mọi tệp được khai báo phải tồn tại ở đúng đường dẫn.
+run_command phải là một chuỗi không rỗng mô tả lệnh chạy dự án.
+Tất cả đường dẫn phải là đường dẫn tương đối; không chấp nhận đường dẫn tuyệt đối hoặc đường dẫn thoát khỏi thư mục gốc như ../.
+Ví dụ trên chỉ minh họa cho dự án dùng Node.js. Đội thi phải thay đường dẫn, tệp phụ thuộc và lệnh chạy cho đúng với công nghệ của mình.
+Nội dung tối thiểu của README.md
+README.md phải có đủ các mục:
+Tên và mô tả ngắn của sản phẩm.
+Bài toán mà sản phẩm giải quyết.
+Danh sách tính năng chính.
+Công nghệ và các phụ thuộc được sử dụng.
+Hướng dẫn cài đặt và chạy dự án.
+Mô tả cấu trúc thư mục.
+Tên đội và vai trò của hai thành viên.
+Điều kiện đạt 20 điểm
+Đội nhận 20/20 điểm khi hệ thống xác nhận đồng thời tất cả điều kiện sau:
+GitHub repository ở chế độ công khai và có thể clone mà không cần quyền truy cập đặc biệt.
+Tên repository hoặc thư mục gốc đúng mẫu [TênĐội]_[Tên đăng nhập].
+Có đủ README.md, chatlog.md, submission.json và .gitignore tại thư mục gốc.
+submission.json hợp lệ và mọi tệp/đường dẫn được khai báo đều tồn tại.
+Có ít nhất một cây mã nguồn không rỗng và ít nhất một tệp khai báo phụ thuộc.
+README.md có đủ các mục bắt buộc.
+chatlog.md không rỗng và có thể đọc dưới dạng văn bản UTF-8.
+Repository không chứa khóa bí mật hoặc tệp môi trường riêng như .env.
+Nếu thiếu hoặc sai bất kỳ điều kiện nào ở trên, bài nhận 0/20 điểm Phần 1. Lỗi ở Phần 1 không tự động loại đội khỏi cuộc thi, trừ trường hợp vi phạm một quy định dẫn đến hủy kết quả được nêu tại [Mục 7].
+Kết quả kiểm tra phải liệt kê rõ từng điều kiện PASS hoặc FAIL và đường dẫn gây lỗi để đội thi có thể tự sửa trước hạn nộp.
+Ok chỉnh lại theo đúng cấu trúc để tôi nộp, thêm prompt này vào chatlog.md
+
+---
+
