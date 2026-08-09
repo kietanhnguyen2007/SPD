@@ -12,7 +12,9 @@ import {
   setMinExperience,
   addConstraint,
   removeConstraint,
-  resetActiveGoal
+  resetActiveGoal,
+  isAdjacencyEnabled,
+  setAdjacencyEnabled
 } from './dataStore.js';
 
 // --- Local UI State (non-persistent, canvas-only) ---
@@ -55,6 +57,11 @@ const elErrorModalOverlay = document.getElementById('error-modal-overlay');
 const elCloseError = document.getElementById('close-error');
 const elErrorContent = document.getElementById('error-content');
 const elBtnLoosen = document.getElementById('btn-loosen');
+
+// Feature 2: Adjacency toggle elements
+const elToggleAdjacency = document.getElementById('toggle-adjacency');
+const elAdjacencyLabel  = document.getElementById('adjacency-mode-label');
+const elAdjacencyDesc   = document.getElementById('adjacency-description');
 
 // --- Initialization ---
 async function init() {
@@ -169,61 +176,40 @@ function setupEventListeners() {
 
   elCloseReport.addEventListener('click', () => elReportDrawer.classList.remove('open'));
   elCloseError.addEventListener('click', () => elErrorModalOverlay.classList.remove('open'));
+
+  // Feature 2: Adjacency Toggle
+  elToggleAdjacency.addEventListener('change', (e) => {
+    const enabled = e.target.checked;
+    setAdjacencyEnabled(enabled);
+    elAdjacencyLabel.textContent = enabled ? '🔀 Flexible Match' : '⚙️ Strict Match';
+    elAdjacencyDesc.textContent  = enabled
+      ? 'Adjacent skills accepted as substitutes (e.g. Data Science → Machine Learning).'
+      : 'Exact skill match only — no substitutes allowed.';
+    elStatusText.textContent = enabled
+      ? '🔀 Flexible Mode active — adjacent skills allowed'
+      : '⚙️ Strict Mode active — exact match only';
+  });
+
+  // Feature 1: Smart Loosen — now shows Trade-off Cards
   elBtnLoosen.addEventListener('click', () => {
     elBtnLoosen.disabled = true;
     elBtnLoosen.textContent = '⚡ Calculating...';
-    
+
     setTimeout(() => {
       const currentGoal = getActiveGoal();
       const result = calculateMinimalLoosen(candidates, currentGoal);
-      
-      if (result.success && result.minimalGoal) {
-        // Apply the exact minimal constraints found
-        if (result.minimalGoal.min_experience_years !== currentGoal.min_experience_years) {
-          setMinExperience(result.minimalGoal.min_experience_years);
-          elMinExp.value = result.minimalGoal.min_experience_years;
-          elExpVal.textContent = `${result.minimalGoal.min_experience_years}yr`;
-        }
-        
-        if (result.minimalGoal.team_size.max !== currentGoal.team_size?.max) {
-          setTeamSize(result.minimalGoal.team_size.min, result.minimalGoal.team_size.max);
-          elSizeMax.value = result.minimalGoal.team_size.max;
-          elSizeVal.textContent = `${result.minimalGoal.team_size.min} - ${result.minimalGoal.team_size.max}`;
-        }
-        
-        // Sync additional constraints
-        const currentConstraints = currentGoal.additional_constraints || [];
-        const newConstraints = result.minimalGoal.additional_constraints || [];
-        const droppedConstraints = currentConstraints.filter(c1 => 
-          !newConstraints.some(c2 => c1.type === c2.type && c1.skill === c2.skill && c1.level === c2.level)
-        );
-        
-        droppedConstraints.forEach(c => {
-          // get the live active goal and find the correct index to remove
-          const liveGoal = getActiveGoal();
-          const idx = liveGoal.additional_constraints.findIndex(c_act => 
-            c_act.type === c.type && c_act.skill === c.skill && c_act.level === c.level
-          );
-          if (idx >= 0) removeConstraint(idx);
-          if (c.type === 'availability') elRequireAvailable.checked = false;
-        });
 
-        const droppedSkills = (currentGoal.required_skills || []).filter(s => !(result.minimalGoal.required_skills || []).includes(s));
-        droppedSkills.forEach(skill => {
-          removeSkill(skill);
-        });
-        
-        elErrorModalOverlay.classList.remove('open');
-        elStatusText.textContent = `⚡ Smart Loosen: ${result.changes.join(' & ')}`;
-        runMatching();
+      if (result.success && result.suggestions.length > 0) {
+        renderTradeoffCards(result.suggestions);
       } else {
-        elStatusText.textContent = "❌ Even with loosened constraints, no team can be formed.";
+        elStatusText.textContent = '❌ Even with loosened constraints, no team can be formed.';
       }
-      
+
       elBtnLoosen.disabled = false;
       elBtnLoosen.textContent = '⚡ Smart Loosen Constraints';
     }, 100);
   });
+
   document.getElementById('btn-different-vibe').addEventListener('click', () => {
     elErrorModalOverlay.classList.remove('open');
   });
@@ -403,7 +389,7 @@ function runMatching() {
   const goal = getActiveGoal();
   if (goal.required_skills.length === 0) return;
 
-  elBtnCrystallize.textContent = '⚛️ atoms colliding...';
+  elBtnCrystallize.textContent = '⛛️ atoms colliding...';
   elBtnCrystallize.disabled = true;
   canvasData.mode = 'active';
   elStatusText.textContent = `analyzing ${candidates.length} candidates, hold tight 🧪`;
@@ -412,15 +398,19 @@ function runMatching() {
 
   setTimeout(() => {
     const t0 = performance.now();
-    const result = findOptimalTeam(candidates, goal);
+    // Feature 2: pass adjacency flag
+    const result = findOptimalTeam(candidates, goal, { useAdjacency: isAdjacencyEnabled() });
     const t1 = performance.now();
 
     elBtnCrystallize.disabled = false;
-    elBtnCrystallize.textContent = "🔄 Reconfigure";
+    elBtnCrystallize.textContent = '🔄 Reconfigure';
 
     if (result.success) {
+      const flexibleMode = isAdjacencyEnabled() && result.substitutions?.length > 0;
       canvasData.mode = 'success';
-      elStatusText.textContent = `🎯 Optimal team found in ${(t1-t0).toFixed(1)}ms — algorithm goes hard`;
+      elStatusText.textContent = `🎯 Optimal team found in ${(t1-t0).toFixed(1)}ms${
+        flexibleMode ? ` — 🔀 ${result.substitutions.length} skill(s) substituted` : ''
+      } — algorithm goes hard`;
       
       const teamIds = result.team.map(t => t.id);
       
@@ -464,6 +454,11 @@ function runMatching() {
 function renderSuccessReport(report) {
   const sp = report.successPayload;
   const stats = sp.teamStats;
+  const hasSubs = sp.substitutionWarnings && sp.substitutionWarnings.length > 0;
+
+  // Build a lookup for quick substitute check per skill
+  const subMap = {};
+  (sp.substitutionWarnings || []).forEach(sw => { subMap[sw.requiredSkill] = sw; });
 
   // Header stats row
   elReportContent.innerHTML = `
@@ -472,27 +467,38 @@ function renderSuccessReport(report) {
       <p class="report-subline">${report.summary.subline}</p>
     </div>
     <div class="report-stats-row">
-      <div class="stat-chip">⚡ 100% Skill Coverage</div>
+      <div class="stat-chip">${hasSubs ? '⚠️ Flexible Match' : '⚡ 100% Skill Coverage'}</div>
       <div class="stat-chip">👥 ${stats.memberCount} Member${stats.memberCount !== 1 ? 's' : ''}</div>
       <div class="stat-chip">⭐ ${stats.avgExperienceYears}yr Avg Exp</div>
       <div class="stat-chip">✅ ${stats.constraintsSatisfied} Constraint${stats.constraintsSatisfied !== 1 ? 's' : ''} Met</div>
     </div>
+    ${hasSubs ? `
+    <div class="substitute-warning-banner">
+      🔀 <strong>Flexible Match Active:</strong> ${sp.substitutionWarnings.length} skill(s) covered by adjacent substitutes.
+      <ul>${sp.substitutionWarnings.map(sw =>
+        `<li>⚠️ <strong>${sw.requiredSkill}</strong> → ${sw.substituteSkill} via ${sw.coveredBy} (${Math.round(sw.coverageScore * 100)}% match)</li>`
+      ).join('')}</ul>
+    </div>` : ''}
     <div class="report-skill-map">
       <h4 class="report-section-label">🗺️ Skill → Member Mapping</h4>
       <div class="skill-map-grid">
-        ${sp.skillMapping.map(entry => `
-          <div class="skill-map-row ${entry.isPrimary ? 'priority' : ''}">
-            <span class="skill-map-tag" style="background:${skillColors[entry.skill] || '#555'}">${entry.skill}${entry.isPrimary ? ' ⭐' : ''}</span>
-            <span class="skill-map-arrow">→</span>
-            <span class="skill-map-member">
-              <strong>${entry.coveredBy}</strong>
-              <span class="skill-map-meta">${entry.proficiency} · ${entry.experienceYears}yr</span>
-            </span>
-          </div>
-        `).join('')}
+        ${sp.skillMapping.map(entry => {
+          const sub = subMap[entry.skill];
+          return `
+            <div class="skill-map-row ${entry.isPrimary ? 'priority' : ''} ${sub ? 'substitute-row' : ''}">
+              <span class="skill-map-tag" style="background:${skillColors[entry.skill] || '#555'}">${entry.skill}${entry.isPrimary ? ' ⭐' : ''}</span>
+              <span class="skill-map-arrow">→</span>
+              <span class="skill-map-member">
+                <strong>${entry.coveredBy}</strong>
+                <span class="skill-map-meta">${entry.proficiency} · ${entry.experienceYears}yr</span>
+                ${sub ? `<span class="substitute-badge">⚠️ SUBSTITUTE · via ${sub.substituteSkill} · ${Math.round(sub.coverageScore * 100)}%</span>` : ''}
+              </span>
+            </div>
+          `;
+        }).join('')}
       </div>
     </div>
-    <h4 class="report-section-label">🧬 Team Roster & Rationale</h4>
+    <h4 class="report-section-label">🧬 Team Roster &amp; Rationale</h4>
   `;
 
   // Member cards
@@ -520,6 +526,95 @@ function renderSuccessReport(report) {
   if (sp.optimizationNote) {
     elReportContent.innerHTML += `<p class="optimization-note">💡 ${sp.optimizationNote}</p>`;
   }
+}
+
+// ─── Feature 1: Trade-off Cards ──────────────────────────────────────────────────────
+
+/**
+ * Renders Trade-off suggestion cards inside the error modal.
+ * Each card shows what would change and has an "Apply" button.
+ * @param {Array<{id, changes, minimalGoal, steps}>} suggestions
+ */
+function renderTradeoffCards(suggestions) {
+  // Remove old cards if any
+  const existing = elErrorContent.querySelector('.tradeoff-cards-section');
+  if (existing) existing.remove();
+
+  const section = document.createElement('div');
+  section.className = 'tradeoff-cards-section';
+  section.innerHTML = `
+    <h4 class="tradeoff-cards-title">💡 ${suggestions.length} phương án thỏa hiệp — chọn 1 để áp dụng ngay:</h4>
+    <div class="tradeoff-cards-grid">
+      ${suggestions.map(sg => `
+        <div class="tradeoff-card" data-suggestion-id="${sg.id}">
+          <div class="tradeoff-card-title">Phương án ${sg.id + 1}
+            <span class="tradeoff-cost-badge">${sg.steps} thay đổi</span>
+          </div>
+          <ul class="tradeoff-changes-list">
+            ${sg.changes.map(c => `<li>✓ ${c}</li>`).join('')}
+          </ul>
+          <button class="btn-apply-tradeoff" data-suggestion-id="${sg.id}">✅ Áp dụng ngay</button>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  // Store suggestions on element for later retrieval
+  section._suggestions = suggestions;
+
+  section.querySelectorAll('.btn-apply-tradeoff').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = parseInt(btn.dataset.suggestionId);
+      const sg = suggestions.find(s => s.id === id);
+      if (sg) applyTradeoffSuggestion(sg);
+    });
+  });
+
+  elErrorContent.appendChild(section);
+}
+
+/**
+ * Applies a trade-off suggestion by syncing DataStore and UI, then re-runs matching.
+ * @param {{ changes: string[], minimalGoal: Object }} suggestion
+ */
+function applyTradeoffSuggestion(suggestion) {
+  const currentGoal = getActiveGoal();
+  const mg = suggestion.minimalGoal;
+
+  if (mg.min_experience_years !== currentGoal.min_experience_years) {
+    setMinExperience(mg.min_experience_years);
+    elMinExp.value = mg.min_experience_years;
+    elExpVal.textContent = `${mg.min_experience_years}yr`;
+  }
+
+  if (mg.team_size.max !== currentGoal.team_size?.max) {
+    setTeamSize(mg.team_size.min, mg.team_size.max);
+    elSizeMax.value = mg.team_size.max;
+    elSizeVal.textContent = `${mg.team_size.min} - ${mg.team_size.max}`;
+  }
+
+  // Sync dropped constraints
+  const currentConstraints = currentGoal.additional_constraints || [];
+  const newConstraints = mg.additional_constraints || [];
+  currentConstraints
+    .filter(c1 => !newConstraints.some(c2 => c1.type === c2.type && c1.skill === c2.skill && c1.level === c2.level))
+    .forEach(c => {
+      const liveGoal = getActiveGoal();
+      const idx = liveGoal.additional_constraints.findIndex(
+        c_act => c_act.type === c.type && c_act.skill === c.skill && c_act.level === c.level
+      );
+      if (idx >= 0) removeConstraint(idx);
+      if (c.type === 'availability') elRequireAvailable.checked = false;
+    });
+
+  // Sync dropped skills
+  (currentGoal.required_skills || [])
+    .filter(s => !(mg.required_skills || []).includes(s))
+    .forEach(s => removeSkill(s));
+
+  elStatusText.textContent = `⚡ Applied: ${suggestion.changes.join(' & ')}`;
+  elErrorModalOverlay.classList.remove('open');
+  runMatching();
 }
 
 function renderFailureReport(report) {

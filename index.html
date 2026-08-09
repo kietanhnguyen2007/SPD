@@ -64,6 +64,19 @@
           <!-- Dynamic constraints can be added here -->
         </div>
 
+        <!-- Feature 2: Skill Adjacency Toggle -->
+        <div class="form-group adjacency-toggle-group">
+          <label class="toggle-label">Matching Mode:</label>
+          <div class="toggle-switch-wrapper">
+            <span class="toggle-mode-label" id="adjacency-mode-label">⚙️ Strict Match</span>
+            <label class="toggle-switch" for="toggle-adjacency" title="Enable Skill Adjacency: accept similar skills as substitutes">
+              <input type="checkbox" id="toggle-adjacency">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <p class="toggle-description" id="adjacency-description">Exact skill match only — no substitutes allowed.</p>
+        </div>
+
         <div class="actions">
           <button id="btn-crystallize" class="btn-primary">🔮 Crystallize My Team</button>
           <button id="btn-reset" class="btn-secondary">Reset ↺</button>

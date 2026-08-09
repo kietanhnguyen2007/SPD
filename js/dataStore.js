@@ -39,7 +39,10 @@ const _state = {
   isLoaded: false,
 
   /** @type {string|null} Error message if loading fails */
-  loadError: null
+  loadError: null,
+
+  /** @type {boolean} Feature 2: Skill Adjacency toggle state (OFF by default) */
+  adjacencyEnabled: false
 };
 
 // ─── Type Definitions (JSDoc) ─────────────────────────────────────────────────
@@ -105,15 +108,36 @@ function _emit(detail = {}) {
 /** Validates a Constraint object's required fields based on its type */
 function _validateConstraint(constraint) {
   if (!constraint || typeof constraint.type !== 'string' || constraint.type.trim() === '') {
-    throw new Error('DataStore: Constraint must have a non-empty "type" string field.');
+    throw new Error('ConstraintValidationError: Constraint must have a non-empty "type" string field.');
   }
   if (constraint.type === 'proficiency_level') {
     if (!constraint.skill || !constraint.level) {
       throw new Error(
-        'DataStore: Constraint type "proficiency_level" requires both "skill" and "level" fields.'
+        'ConstraintValidationError: Constraint type "proficiency_level" requires both "skill" and "level" fields.'
       );
     }
   }
+}
+
+/**
+ * Validates candidate objects loaded from JSON.
+ * Enforces strict zero-sensitive-data rule and 2-5 skills bound.
+ */
+export function validateCandidateSchema(c) {
+  if (!c || typeof c !== 'object') throw new Error('SchemaValidationError: Candidate must be an object.');
+  
+  const sensitiveKeys = ['ethnicity', 'religion', 'political_views', 'gender'];
+  for (const key of sensitiveKeys) {
+    if (key in c) {
+      throw new Error(`SchemaValidationError: Sensitive field detected ("${key}").`);
+    }
+  }
+
+  if (!Array.isArray(c.skills) || c.skills.length < 2 || c.skills.length > 5) {
+    throw new Error(`SchemaValidationError: Skill array length invalid for candidate ${c.id || c.name || 'unknown'}. Must be between 2 and 5 skills.`);
+  }
+
+  return true;
 }
 
 // ─── Bootstrap: Load Data from JSON ──────────────────────────────────────────
@@ -144,6 +168,12 @@ export async function bootstrap() {
     const seen = new Set();
     _state.candidates = (Array.isArray(candidatesRaw) ? candidatesRaw : []).filter(c => {
       if (!c || !c.id || seen.has(c.id)) return false;
+      try {
+        validateCandidateSchema(c);
+      } catch (e) {
+        console.warn(`[DataStore] Dropping candidate ${c.id}: ${e.message}`);
+        return false;
+      }
       seen.add(c.id);
       return true;
     });
@@ -360,4 +390,72 @@ export function getConstraints() {
 export function resetActiveGoal() {
   _state.activeGoal = _createEmptyGoal();
   _emit({ type: 'active_goal_reset' });
+}
+
+// ─── Feature 2: Adjacency Toggle ────────────────────────────────────────────────────────
+
+/** Returns whether Skill Adjacency mode is currently enabled. */
+export function isAdjacencyEnabled() {
+  return _state.adjacencyEnabled;
+}
+
+/**
+ * Enables or disables the Skill Adjacency matching mode.
+ * Emits 'adjacency_toggled' event so the UI can react.
+ * @param {boolean} value
+ */
+export function setAdjacencyEnabled(value) {
+  _state.adjacencyEnabled = Boolean(value);
+  _emit({ type: 'adjacency_toggled', enabled: _state.adjacencyEnabled });
+}
+
+// ─── Skill Adjacency Matrix ──────────────────────────────────────────────────────────────
+//
+// Defines proximity between skills (0.0 = unrelated, 1.0 = identical).
+// Only one direction needs to be defined; lookups are symmetric.
+
+const SKILL_ADJACENCY = {
+  'Frontend':                { 'UI/UX Design': 0.7, 'Mobile Development': 0.5 },
+  'Backend':                 { 'Database Administration': 0.7, 'Cloud Architecture': 0.5 },
+  'Machine Learning':        { 'Data Science': 0.8 },
+  'Data Science':            { 'Machine Learning': 0.8, 'Backend': 0.4 },
+  'DevOps':                  { 'Cloud Architecture': 0.8, 'Backend': 0.4 },
+  'Cloud Architecture':      { 'DevOps': 0.8, 'Backend': 0.5 },
+  'Mobile Development':      { 'Frontend': 0.5 },
+  'UI/UX Design':            { 'Frontend': 0.7, 'Technical Writing': 0.3 },
+  'Database Administration': { 'Backend': 0.7 },
+  'Cybersecurity':           { 'Cloud Architecture': 0.4, 'DevOps': 0.3 },
+  'QA Testing':              { 'Technical Writing': 0.3, 'Backend': 0.3 },
+  'Project Management':      { 'Business Analysis': 0.8 },
+  'Business Analysis':       { 'Project Management': 0.8, 'Technical Writing': 0.5 },
+  'Technical Writing':       { 'Business Analysis': 0.5 },
+  'Embedded Systems':        {}
+};
+
+/**
+ * Returns the adjacency score between two skills (symmetric).
+ * @param {string} skillA
+ * @param {string} skillB
+ * @returns {number} 0.0 – 1.0
+ */
+export function getAdjacencyScore(skillA, skillB) {
+  if (skillA === skillB) return 1.0;
+  return SKILL_ADJACENCY[skillA]?.[skillB]
+      ?? SKILL_ADJACENCY[skillB]?.[skillA]
+      ?? 0.0;
+}
+
+/**
+ * Finds skills in availableSkillsInPool that can substitute for missingSkill.
+ * @param {string}  missingSkill
+ * @param {Set<string>} availableSkillsInPool
+ * @param {number}  [minScore=0.4]
+ * @returns {Array<{skill: string, score: number}>} sorted descending by score
+ */
+export function findAdjacentSkills(missingSkill, availableSkillsInPool, minScore = 0.4) {
+  const row = SKILL_ADJACENCY[missingSkill] || {};
+  return Object.keys(row)
+    .filter(adj => availableSkillsInPool.has(adj) && row[adj] >= minScore)
+    .map(adj => ({ skill: adj, score: row[adj] }))
+    .sort((a, b) => b.score - a.score);
 }

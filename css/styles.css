@@ -893,3 +893,222 @@ input[type=range]::-webkit-slider-thumb {
   white-space: nowrap;
   flex-shrink: 0;
 }
+
+/* ─── Feature 1: Trade-off Cards ────────────────────────────────────────────── */
+
+.tradeoff-cards-section {
+  margin-top: 1.25rem;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 1rem;
+}
+
+.tradeoff-cards-title {
+  font-size: 0.82rem;
+  color: #34d399;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 0.75rem;
+}
+
+.tradeoff-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.tradeoff-card {
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  border-radius: 10px;
+  padding: 0.85rem;
+  background: rgba(34, 197, 94, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+.tradeoff-card:hover {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.7);
+  transform: translateY(-2px);
+}
+
+.tradeoff-card-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #86efac;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tradeoff-cost-badge {
+  background: rgba(34,197,94,0.15);
+  color: #34d399;
+  border: 1px solid rgba(34,197,94,0.3);
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.tradeoff-changes-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+.tradeoff-changes-list li {
+  font-size: 0.73rem;
+  color: #d1fae5;
+  line-height: 1.4;
+}
+
+.btn-apply-tradeoff {
+  margin-top: auto;
+  background: rgba(34,197,94,0.2);
+  color: #34d399;
+  border: 1px solid rgba(34,197,94,0.5);
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.btn-apply-tradeoff:hover {
+  background: #22c55e;
+  color: #0a0a1a;
+  border-color: #22c55e;
+}
+
+/* ─── Feature 2: Adjacency Toggle Switch ─────────────────────────────────────── */
+
+.adjacency-toggle-group {
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.toggle-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.4rem;
+  display: block;
+}
+
+.toggle-switch-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.4rem 0;
+}
+
+.toggle-mode-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  min-width: 130px;
+  transition: color 0.25s;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.1);
+  border-radius: 24px;
+  transition: background 0.25s;
+  border: 1px solid rgba(255,255,255,0.15);
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 3px;
+  top: 2px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.25s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+.toggle-switch input:checked + .toggle-slider {
+  background: #6366f1;
+  border-color: #818cf8;
+  box-shadow: 0 0 8px rgba(99,102,241,0.4);
+}
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(20px);
+}
+
+.toggle-description {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin: 0;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+/* ─── Feature 2: Substitute Badge & Warning Banner ───────────────────────────── */
+
+.substitute-badge {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(245,158,11,0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245,158,11,0.4);
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  margin-top: 0.15rem;
+}
+
+.skill-map-row.substitute-row {
+  background: rgba(245,158,11,0.06);
+  border-radius: 6px;
+  padding: 0.2rem 0.4rem;
+  border-left: 2px solid rgba(245,158,11,0.5);
+}
+
+.substitute-warning-banner {
+  background: rgba(245,158,11,0.08);
+  border: 1px solid rgba(245,158,11,0.35);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.78rem;
+  color: #fbbf24;
+  line-height: 1.5;
+}
+.substitute-warning-banner ul {
+  list-style: none;
+  padding: 0;
+  margin: 0.4rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.substitute-warning-banner li {
+  font-size: 0.73rem;
+  color: #fde68a;
+}

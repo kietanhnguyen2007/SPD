@@ -283,6 +283,15 @@ function buildSuccessReport(engineResult, goal, allCandidates) {
   const headline = pickRandom(SUCCESS_HEADLINES, team.length);
   const subline  = `${team.map(m => m.name.split(' ')[0]).join(', ')} cover all ${goal.required_skills?.length} required skills — avg ${avgExp.toFixed(1)}yr exp, ${constraintsSatisfied} constraint${constraintsSatisfied !== 1 ? 's' : ''} satisfied.`;
 
+  // Substitution warnings (Feature 2)
+  const substitutionWarnings = (engineResult.substitutions || []).map(sub => ({
+    requiredSkill:   sub.requiredSkill,
+    substituteSkill: sub.viaSkill,
+    coverageScore:   sub.coverageScore,
+    coveredBy:       sub.coveredBy,
+    message: `"${sub.requiredSkill}" not in pool — covered by "${sub.viaSkill}" via ${sub.coveredBy} (${Math.round(sub.coverageScore * 100)}% compatibility).`
+  }));
+
   return {
     reportType:  'success',
     projectName: goal.project_name || 'Unnamed Project',
@@ -292,12 +301,13 @@ function buildSuccessReport(engineResult, goal, allCandidates) {
       teamStats: {
         memberCount:          team.length,
         avgExperienceYears:   parseFloat(avgExp.toFixed(1)),
-        skillCoverageRate:    1.0,
+        skillCoverageRate:    substitutionWarnings.length > 0 ? (1 - substitutionWarnings.length / (goal.required_skills?.length || 1)) : 1.0,
         constraintsSatisfied,
         totalConstraints:     (goal.additional_constraints || []).length,
       },
-      skillMapping:    skillMappingArr,
+      skillMapping:         skillMappingArr,
       memberRationales,
+      substitutionWarnings,
       optimizationNote: team.length === (goal.team_size?.min ?? 1)
         ? `Engine selected the minimum viable team (${team.length} members) to minimize resource overhead.`
         : null,

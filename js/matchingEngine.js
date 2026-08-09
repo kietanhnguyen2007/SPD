@@ -1,9 +1,14 @@
 /**
  * Core Matching Engine for SPD Team-Matching System (Hardened & Optimized)
- * 
+ *
  * Architecture: Constraint Satisfaction Problem (CSP) using Bitmask State,
  * Inverted Skill Indexing, MRV Skill-First Branching, and Zero-Allocation Recursion.
+ *
+ * Features:
+ *   - options.useAdjacency: enable Skill Adjacency Graph (soft-match substitution)
+ *   - calculateMinimalLoosen: returns up to 3 distinct Trade-off Suggestions
  */
+import { findAdjacentSkills } from './dataStore.js';
 
 /**
  * Main entry point for team recommendation algorithm.
@@ -12,7 +17,13 @@
  * @param {Object} projectGoal - Project goal definition with skills and constraints
  * @returns {Object} Structured output with success status, team array, skill mapping, or failure report
  */
-export function findOptimalTeam(candidates, projectGoal) {
+/**
+ * @param {Object} [options]
+ * @param {boolean} [options.useAdjacency=false] - If true, missing skills with adjacent
+ *   substitutes in the pool are soft-matched instead of causing immediate failure.
+ */
+export function findOptimalTeam(candidates, projectGoal, options = {}) {
+  const useAdjacency = Boolean(options.useAdjacency);
   // Input Validation & Guard Clauses
   if (!Array.isArray(candidates) || !projectGoal) {
     return {
@@ -55,32 +66,59 @@ export function findOptimalTeam(candidates, projectGoal) {
 
   const missingFromPool = requiredSkills.filter(reqSkill => !poolSkills.has(reqSkill));
 
+  // ── Feature 2: Skill Adjacency Substitution ────────────────────────────────
+  // substitutions: { missingSkill → { substituteSkill, score } }
+  const substitutions = {};
+
   if (missingFromPool.length > 0) {
-    const globalSkillsAllCandidates = new Set();
-    uniqueCandidates.forEach(c => (c.skills || []).forEach(s => globalSkillsAllCandidates.add(s)));
-    
-    const missingDueToConstraints = missingFromPool.filter(s => globalSkillsAllCandidates.has(s));
-    const failingConstraints = [];
-    if (missingDueToConstraints.length > 0) {
-      failingConstraints.push(`Hard constraints (min_exp: ${minExperience} yrs, custom rules) filtered out candidates with: ${missingDueToConstraints.join(', ')}`);
+    if (useAdjacency) {
+      for (const missing of missingFromPool) {
+        const adjacent = findAdjacentSkills(missing, poolSkills);
+        if (adjacent.length > 0) {
+          substitutions[missing] = adjacent[0]; // best adjacent skill
+        }
+      }
     }
 
-    return {
-      success: false,
-      team: [],
-      skillMapping: {},
-      failureReport: {
-        reason: 'Required skill(s) missing from candidate pool after filtering',
-        missingSkills: missingFromPool,
-        failingConstraints: failingConstraints
+    const trulyMissing = missingFromPool.filter(s => !substitutions[s]);
+
+    if (trulyMissing.length > 0) {
+      const globalSkillsAllCandidates = new Set();
+      uniqueCandidates.forEach(c => (c.skills || []).forEach(s => globalSkillsAllCandidates.add(s)));
+
+      const missingDueToConstraints = trulyMissing.filter(s => globalSkillsAllCandidates.has(s));
+      const failingConstraints = [];
+      if (missingDueToConstraints.length > 0) {
+        failingConstraints.push(`Hard constraints (min_exp: ${minExperience} yrs, custom rules) filtered out candidates with: ${missingDueToConstraints.join(', ')}`);
       }
-    };
+
+      return {
+        success: false,
+        team: [],
+        skillMapping: {},
+        substitutions: [],
+        failureReport: {
+          reason: 'Required skill(s) missing from candidate pool after filtering',
+          missingSkills: trulyMissing,
+          failingConstraints: failingConstraints
+        }
+      };
+    }
   }
+  // ── End Adjacency Fast-Fail Block ──────────────────────────────────────────
 
   // Step 4: Map Skills to Bit Indices (0 ... K-1) for Bitmask State Representation
+  // When adjacency is active, substitute skills are mapped to the SAME bit as the missing skill.
   const skillToBitMap = new Map();
   requiredSkills.forEach((skill, index) => {
     skillToBitMap.set(skill, index);
+    // Map the substitute skill → same bit index as the missing skill it replaces
+    if (substitutions[skill]) {
+      const subSkill = substitutions[skill].skill;
+      if (!skillToBitMap.has(subSkill)) {
+        skillToBitMap.set(subSkill, index);
+      }
+    }
   });
   const totalSkillsCount = requiredSkills.length;
   const FULL_SKILL_MASK = (1n << BigInt(totalSkillsCount)) - 1n;
@@ -136,18 +174,20 @@ export function findOptimalTeam(candidates, projectGoal) {
   // Step 7: Format Output Result
   if (isSuccess) {
     const solutionTeam = currentTeamIndices.map(idx => relevantPool[idx].candidate);
-    
+
     // Safety Assertion: Strict Uniqueness Constraint
     const uniqueIds = new Set(solutionTeam.map(m => m.id));
     if (solutionTeam.length !== uniqueIds.size) {
       throw new Error(`CRITICAL ALGORITHM FAILURE: Duplicate candidate detected in the generated team. Team size: ${solutionTeam.length}, Unique IDs: ${uniqueIds.size}`);
     }
 
-    const skillMapping = buildSkillMapping(solutionTeam, requiredSkills);
+    const skillMapping = buildSkillMapping(solutionTeam, requiredSkills, substitutions);
+    const substitutionReport = buildSubstitutionReport(solutionTeam, substitutions, skillMapping);
     return {
       success: true,
       team: solutionTeam,
       skillMapping: skillMapping,
+      substitutions: substitutionReport,
       failureReport: null
     };
   }
@@ -171,6 +211,7 @@ export function findOptimalTeam(candidates, projectGoal) {
     success: false,
     team: [],
     skillMapping: {},
+    substitutions: [],
     failureReport: {
       reason: 'No valid candidate combination could satisfy all skill and size constraints simultaneously',
       missingSkills: missingSkillNames,
@@ -415,17 +456,19 @@ function compareProficiency(actualLevel, targetLevel, operator = 'equals') {
   return compare(actualRank, targetRank, operator);
 }
 
-function buildSkillMapping(team, requiredSkills) {
+function buildSkillMapping(team, requiredSkills, substitutions = {}) {
   const PROFICIENCY_RANK = { Expert: 4, Advanced: 3, Intermediate: 2, Beginner: 1 };
 
   // Build candidate list per skill: sorted by proficiency descending
+  // When adjacency is active, also look for candidates with the substitute skill.
   const skillCandidates = {};
   requiredSkills.forEach(skill => {
+    const subSkill = substitutions[skill]?.skill;
     skillCandidates[skill] = team
-      .filter(m => (m.skills || []).includes(skill))
+      .filter(m => (m.skills || []).includes(skill) || (subSkill && (m.skills || []).includes(subSkill)))
       .sort((a, b) => {
-        const ra = PROFICIENCY_RANK[a.proficiency_level?.[skill]] || 0;
-        const rb = PROFICIENCY_RANK[b.proficiency_level?.[skill]] || 0;
+        const ra = PROFICIENCY_RANK[a.proficiency_level?.[skill] || a.proficiency_level?.[subSkill]] || 0;
+        const rb = PROFICIENCY_RANK[b.proficiency_level?.[skill] || b.proficiency_level?.[subSkill]] || 0;
         return rb - ra;
       });
   });
@@ -464,10 +507,32 @@ function buildSkillMapping(team, requiredSkills) {
   return mapping;
 }
 
+/**
+ * Builds a human-readable substitution report for the success result.
+ * @param {Object[]} team
+ * @param {Object} substitutions - { missingSkill: { skill: subSkill, score } }
+ * @param {Object} skillMapping  - { skill: candidateId }
+ * @returns {Array<{requiredSkill, viaSkill, coverageScore, coveredBy}>}
+ */
+function buildSubstitutionReport(team, substitutions, skillMapping) {
+  return Object.entries(substitutions).map(([missing, sub]) => {
+    const providerId = skillMapping[missing];
+    const provider = team.find(m => m.id === providerId);
+    return {
+      requiredSkill: missing,
+      viaSkill: sub.skill,
+      coverageScore: sub.score,
+      coveredBy: provider?.name || 'Unknown'
+    };
+  });
+}
+
 
 /**
- * Calculates the minimal reduction in constraints required to find a valid team.
- * Uses Breadth-First Search (BFS) over the constraint state space.
+ * Calculates up to 3 distinct minimal trade-off suggestions to unblock a failed match.
+ * Uses BFS over constraint state space; collects ALL solutions at the minimum step depth.
+ *
+ * @returns {{ success: boolean, suggestions: Array<{id, changes, minimalGoal, steps}> }}
  */
 export function calculateMinimalLoosen(candidates, currentGoal) {
   const poolSkills = new Set();
@@ -477,28 +542,35 @@ export function calculateMinimalLoosen(candidates, currentGoal) {
     exp: currentGoal.min_experience_years || 0,
     maxSize: currentGoal.team_size?.max || candidates.length,
     reqSkills: currentGoal.required_skills || [],
-    activeConstraints: currentGoal.additional_constraints ? currentGoal.additional_constraints.map((_, i) => i) : []
+    activeConstraints: currentGoal.additional_constraints
+      ? currentGoal.additional_constraints.map((_, i) => i)
+      : []
   };
 
   const queue = [{ state: initialState, steps: 0, path: [] }];
   const visited = new Set();
-  
+
   function getStateKey(s) {
     return `${s.exp}-${s.maxSize}-${s.reqSkills.slice().sort().join(',')}-${s.activeConstraints.slice().sort().join(',')}`;
   }
   visited.add(getStateKey(initialState));
 
+  const suggestions = [];
+  let minSteps = Infinity;
+  const MAX_SUGGESTIONS = 3;
   let iterations = 0;
-  const MAX_ITERATIONS = 800;
+  const MAX_ITERATIONS = 1200; // slightly higher to allow collecting peers
 
   while (queue.length > 0 && iterations < MAX_ITERATIONS) {
     iterations++;
     const current = queue.shift();
     const s = current.state;
 
+    // Once we have collected enough suggestions at minSteps depth, stop
+    if (current.steps > minSteps) break;
+
     // Build mock goal
     const mockConstraints = s.activeConstraints.map(i => currentGoal.additional_constraints[i]);
-
     const mockGoal = {
       ...currentGoal,
       min_experience_years: s.exp,
@@ -507,19 +579,26 @@ export function calculateMinimalLoosen(candidates, currentGoal) {
       required_skills: s.reqSkills
     };
 
-    // Test constraint configuration
+    // Test constraint configuration (always strict matching for relaxation BFS)
     const result = findOptimalTeam(candidates, mockGoal);
     if (result.success) {
-      return {
-        success: true,
-        minimalGoal: mockGoal,
-        steps: current.steps,
-        changes: current.path
-      };
+      minSteps = current.steps;
+      // Deduplicate by changes signature
+      const sig = [...current.path].sort().join('|');
+      if (!suggestions.some(sg => [...sg.changes].sort().join('|') === sig)) {
+        suggestions.push({
+          id: suggestions.length,
+          changes: current.path,
+          minimalGoal: mockGoal,
+          steps: current.steps
+        });
+      }
+      if (suggestions.length >= MAX_SUGGESTIONS) break;
+      continue; // Don't expand from a successful node
     }
 
     // Enqueue neighbors (loosened states)
-    
+
     // 1. Decrease experience
     if (s.exp > 0) {
       const nextState = { ...s, exp: s.exp - 1 };
@@ -529,7 +608,7 @@ export function calculateMinimalLoosen(candidates, currentGoal) {
         queue.push({
           state: nextState,
           steps: current.steps + 1,
-          path: [...current.path, 'Reduced experience by 1yr']
+          path: [...current.path, `Giảm kinh nghiệm tối thiểu xuống ${s.exp - 1} năm`]
         });
       }
     }
@@ -543,7 +622,7 @@ export function calculateMinimalLoosen(candidates, currentGoal) {
         queue.push({
           state: nextState,
           steps: current.steps + 1,
-          path: [...current.path, 'Increased max team size by 1']
+          path: [...current.path, `Tăng số thành viên tối đa lên ${s.maxSize + 1}`]
         });
       }
     }
@@ -557,22 +636,20 @@ export function calculateMinimalLoosen(candidates, currentGoal) {
       if (!visited.has(keyConstr)) {
         visited.add(keyConstr);
         const droppedC = currentGoal.additional_constraints[s.activeConstraints[i]];
-        const constraintName = droppedC.type === 'proficiency_level' ? `${droppedC.skill} ${droppedC.level}` : droppedC.type;
+        const constraintName = droppedC.type === 'proficiency_level'
+          ? `${droppedC.skill} ${droppedC.level}`
+          : droppedC.type;
         queue.push({
           state: nextState,
           steps: current.steps + 1,
-          path: [...current.path, `Dropped constraint: ${constraintName}`]
+          path: [...current.path, `Bỏ ràng buộc: ${constraintName}`]
         });
       }
     }
-    
-    // 4. Drop an impossible skill (a skill nobody in the pool has, or just one that causes failure)
-    // To keep BFS efficient, we only drop a skill if it's strictly missing from the pool, OR if we are desperate.
-    // Actually, letting it drop ANY skill is the most robust, but to avoid combinatorial explosion, 
-    // we prioritize dropping skills that NO ONE has.
+
+    // 4. Drop skills strictly missing from pool
     for (let i = 0; i < s.reqSkills.length; i++) {
       const skillToDrop = s.reqSkills[i];
-      // If it's missing from the pool, dropping it is a 1-step move.
       if (!poolSkills.has(skillToDrop)) {
         const nextSkills = [...s.reqSkills];
         nextSkills.splice(i, 1);
@@ -583,12 +660,52 @@ export function calculateMinimalLoosen(candidates, currentGoal) {
           queue.push({
             state: nextState,
             steps: current.steps + 1,
-            path: [...current.path, `Dropped missing skill: ${skillToDrop}`]
+            path: [...current.path, `Bỏ skill không có trong pool: ${skillToDrop}`]
           });
         }
       }
     }
   }
 
-  return { success: false, minimalGoal: null, steps: 0, changes: [] };
+  // ── Bonus: Always try a dedicated "team size increase" sweep ─────────────────
+  // The BFS above only surfaces team-size suggestions when they are the minimum-
+  // cost path.  In many real scenarios (e.g. experience is the binding constraint)
+  // increasing team size helps but costs more BFS steps, so it never wins the race.
+  // Here we explicitly scan: for each +1 increment to maxSize, does a team exist?
+  // If yes and that change isn't already represented in suggestions, inject it.
+  if (suggestions.length < MAX_SUGGESTIONS) {
+    const currentMaxSize = currentGoal.team_size?.max ?? candidates.length;
+    for (let extra = 1; extra <= 3 && suggestions.length < MAX_SUGGESTIONS; extra++) {
+      const trialMaxSize = currentMaxSize + extra;
+      if (trialMaxSize > candidates.length) break;
+
+      const trialGoal = {
+        ...currentGoal,
+        team_size: { min: currentGoal.team_size?.min || 1, max: trialMaxSize }
+      };
+      const trialResult = findOptimalTeam(candidates, trialGoal);
+      if (trialResult.success) {
+        const changeLabel = `Tăng số thành viên tối đa: ${currentMaxSize} → ${trialMaxSize}`;
+        const alreadyCovered = suggestions.some(sg =>
+          sg.changes.some(c => c.includes('Tăng số thành viên'))
+        );
+        if (!alreadyCovered) {
+          suggestions.push({
+            id: suggestions.length,
+            changes: [changeLabel],
+            minimalGoal: trialGoal,
+            steps: extra
+          });
+        }
+        break; // smallest working increment found
+      }
+    }
+  }
+
+  if (suggestions.length > 0) {
+    // Re-number ids to be sequential after possible injection
+    suggestions.forEach((sg, i) => { sg.id = i; });
+    return { success: true, suggestions };
+  }
+  return { success: false, suggestions: [] };
 }
